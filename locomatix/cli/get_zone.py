@@ -13,12 +13,16 @@ def get_zone():
   parser.add_arg('zoneid', 'Zone to be fetched')
   args = parser.parse_args(sys.argv)
   
-  lxsvc = locomatix.Service(args['custid'], \
-                           args['key'], \
-                           args['secret-key'], \
-                           args['host'], \
-                           args['port'], \
-                           args['use-ssl'])
+  try:
+    lxsvc = locomatix.Service(args['custid'], \
+                             args['key'], \
+                             args['secret-key'], \
+                             args['host'], \
+                             args['port'], \
+                             args['use-ssl'])
+  except:
+    print "Unable to connect to %s at port %d" % (args['host'],args['port'])
+    sys.exit(1)
   
   response = lxsvc.get_zone(args['zoneid'], args['objectid'], args['feed'])
   

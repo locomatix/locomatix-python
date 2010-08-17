@@ -12,12 +12,16 @@ def get_attributes():
   parser.add_roption('feed',  'f:', 'feed=', 'Name of the feed')
   args = parser.parse_args(sys.argv)
   
-  lxsvc = locomatix.Service(args['custid'], \
-                           args['key'], \
-                           args['secret-key'], \
-                           args['host'], \
-                           args['port'], \
-                           args['use-ssl'])
+  try:
+    lxsvc = locomatix.Service(args['custid'], \
+                             args['key'], \
+                             args['secret-key'], \
+                             args['host'], \
+                             args['port'], \
+                             args['use-ssl'])
+  except:
+    print "Unable to connect to %s at port %d" % (args['host'],args['port'])
+    sys.exit(1)
   
   response = lxsvc.get_attributes(args['objectid'], args['feed'])
   

@@ -13,12 +13,16 @@ def list_zones():
   parser.add_arg('objectid','Object attached to the zones')
   args = parser.parse_args(sys.argv)
   
-  lxsvc = locomatix.Service(args['custid'], \
-                           args['key'], \
-                           args['secret-key'], \
-                           args['host'], \
-                           args['port'], \
-                           args['use-ssl'])
+  try:
+    lxsvc = locomatix.Service(args['custid'], \
+                             args['key'], \
+                             args['secret-key'], \
+                             args['host'], \
+                             args['port'], \
+                             args['use-ssl'])
+  except:
+    print "Unable to connect to %s at port %d" % (args['host'],args['port'])
+    sys.exit(1)
   
   for batch in lxsvc.list_zones_iterator(args['objectid'], args['feed']):
     for zone in batch.zones:

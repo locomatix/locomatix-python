@@ -17,12 +17,16 @@ def create_zone():
   parser.add_option('from-feeds','m:', 'from=',  'From feeds', True)
   args = parser.parse_args(sys.argv)
   
-  lxsvc = locomatix.Service(args['custid'], \
-                           args['key'], \
-                           args['secret-key'], \
-                           args['host'], \
-                           args['port'], \
-                           args['use-ssl'])
+  try:
+    lxsvc = locomatix.Service(args['custid'], \
+                             args['key'], \
+                             args['secret-key'], \
+                             args['host'], \
+                             args['port'], \
+                             args['use-ssl'])
+  except:
+    print "Unable to connect to %s at port %d" % (args['host'],args['port'])
+    sys.exit(1)
   
   zoneid     = args['zoneid']
   objectid   = args['objectid']
