@@ -1,0 +1,87 @@
+#!/usr/bin/env python
+import sys
+import locomatix.cli as cli
+
+
+USAGE_FMT = """Usage: lx <subcommand> [options]
+
+Supported subcommands:
+%s
+
+For help with a particular subcommand
+  lx <subcommand> --help
+"""
+
+
+class Subcommand():
+  """Holds long/short format names and a function to call to execute the command."""
+  def __init__(self, long_form, short_form, method):
+    self.long_form = long_form
+    self.short_form = short_form
+    self.method = method
+
+SUBCOMMANDS = [
+  Subcommand('create-object',     'co',  cli.create_object),
+  Subcommand('delete-object',     'do',  cli.delete_object),
+  Subcommand('list-objects',      'lo',  cli.list_objects),
+  Subcommand('update-attributes', 'ua',  cli.update_attributes),
+  Subcommand('get-attributes',    'ga',  cli.get_attributes),
+  Subcommand('update-location',   'ul',  cli.update_location),
+  Subcommand('get-location',      'gl',  cli.get_location),
+  Subcommand('create-zone',       'cz',  cli.create_zone),
+  Subcommand('get-zone',          'gz',  cli.get_zone),
+  Subcommand('delete-zone',       'dz',  cli.delete_zone),
+  Subcommand('list-zones',        'lz',  cli.list_zones),
+  Subcommand('create-fence',      'cf',  cli.create_fence),
+  Subcommand('get-fence',         'gf',  cli.get_fence),
+  Subcommand('delete-fence',      'df',  cli.delete_fence),
+  Subcommand('list-fences',       'lf',  cli.list_fences),
+  Subcommand('search-region',     'sr',  cli.search_region),
+  Subcommand('search-nearby',     'sn',  cli.search_nearby)
+]
+
+def find_subcommand(subcmd):
+  """Finds a Subcommand that matches a subcmd arg string, returns None if no match."""
+  for subcommand in SUBCOMMANDS:
+    if subcmd in (subcommand.long_form, subcommand.short_form): return subcommand
+  return None
+
+def usage():
+  """Returns the main usage message for lx, including list of valid subcommands."""
+  supported_subcommands = ""
+  fmt = "    %-20s[%s]\n"
+  for subcommand in SUBCOMMANDS:
+    supported_subcommands += fmt % (subcommand.long_form, subcommand.short_form)
+  return USAGE_FMT % supported_subcommands
+
+
+def main():
+  # must provide at least a subcommand
+  if len(sys.argv) < 2:
+    print usage()
+    sys.exit(1)
+  
+  # pull the subcommand from the args list
+  subcmd = sys.argv[1]
+  del sys.argv[1]
+  
+  # try to match the subcommand to one we support
+  subcommand = find_subcommand(subcmd)
+  
+  if subcommand:
+    # found a valid subcommand, set up a locomatix service and run it
+    
+    subcommand.method()
+  else:
+    # subcommand didn't match anything, print the usage message
+    print "Invalid subcommand, try again."
+    print usage()
+    sys.exit(1)
+  
+  # all done!
+  sys.exit(0)
+
+
+
+if __name__ == '__main__':
+  main()

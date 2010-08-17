@@ -1,0 +1,44 @@
+= locomatix-python
+
+The locomatix-python package provides an SDK to consume and use Locomatix REST API services. The package allows all the same operations as the pure REST API without the need to manage the details of sending and receiving HTTP requests.  It also manages parsing of the standard XML responses, and returns pure Python objects with convenient attribute accessors.  The package also includes a handy command line utility that you can use to manually submit requests and query your locomatix data.
+
+= Installation
+
+  git clone http://github.com/locomatix/locomatix-python.git
+  cd locomatix-python
+  sudo python setup.py install
+
+= Registering for an API Key
+
+In order to use the locomatix cloud services you need to request an API Key.  The API Key allows you to upload data, locations, and alerts to the locomatix servers and to make queries against your data.  The API Key consists of three pieces of information: customer ID, customer key, and secret key.  You will need to provide these credentials with every request you submit.
+
+Sign up for an API Key today here[http://www.locomatix.com/signup], it's free!
+
+= Documentation
+
+There is a lot to learn about the concepts underlying the Locomatix system in order to take full advantage of it.  Complete documentation is available here[http://www.locomatix.com/docs/0.9/overview].
+
+= Command Line Utility
+
+A convenient command line utility is provided with locomatix-python that you can use to get started with the package.  To see a list of subcommands available just run:
+
+  lx --help
+
+In order to save some tedious typing, _lx_ can read your Locomatix API credentials from an .lxrc file in your home directory.  Just create the file with this format:
+
+  host = api.locomatix.com
+  port = 443
+  custid = {your customer id}
+  key =  {your customer key}
+  secret_key = {your secret key}
+  use_ssl = yes
+  version = 0.9
+
+= License
+
+Licensed under the Apache License, Version 2.0.  See LICENSE for details.
+
+Copyright 2010 Locomatix, Inc.
+
+
+
