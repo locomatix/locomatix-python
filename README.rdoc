@@ -31,7 +31,6 @@ In order to save some tedious typing, _lx_ can read your Locomatix API credentia
   custid = {your customer id}
   key =  {your customer key}
   secret_key = {your secret key}
-  use_ssl = yes
   version = 0.9
 
 = License
