@@ -24,9 +24,9 @@ class ArgsParser:
           self.args['port'] = DEFAULT_LOCOMATIX_PORTS[self.args['use-ssl']]
 
           # Add the standard set of options
-          self.add_option('custid',     'c:', 'custid=',    'Customer ID for authentication')
-          self.add_option('key',        'k:', 'key=',       'Key for authentication')
-          self.add_option('secret-key', 's:', 'secret-key=','Secret key for authentication')
+          self.add_roption('custid',     'c:', 'custid=',    'Customer ID for authentication')
+          self.add_roption('key',        'k:', 'key=',       'Key for authentication')
+          self.add_roption('secret-key', 's:', 'secret-key=','Secret key for authentication')
           self.add_option('help',       'h',  'help',       'Print help message')
 
           # Read the credentials from the locomatix startup file, if it exists
