@@ -33,10 +33,10 @@ ROUTE_SIGNATURES = {
   'GetZone':          ( 'GET',    '/zone/%s/Get.xml',                     ['feed'] ),
   'ListZones':        ( 'GET',    '/zone/%s/List.xml',                    ['feed'] ),
   'DeleteZone':       ( 'DELETE', '/zone/%s/Delete.xml',                  ['feed'] ),
-  'CreateFence':      ( 'POST',   '/fence/Create',                    None     ),
-  'GetFence':         ( 'GET',    '/fence/Get',                       None     ),
-  'ListFences':       ( 'GET',    '/fence/List',                      None     ),
-  'DeleteFence':      ( 'DELETE', '/fence/Delete',                    None     )
+  'CreateFence':      ( 'POST',   '/fence/Create.xml',                    None     ),
+  'GetFence':         ( 'GET',    '/fence/Get.xml',                       None     ),
+  'ListFences':       ( 'GET',    '/fence/List.xml',                      None     ),
+  'DeleteFence':      ( 'DELETE', '/fence/Delete.xml',                    None     )
 }
 
 class LocomatixRequest(object):
