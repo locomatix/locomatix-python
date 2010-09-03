@@ -16,7 +16,7 @@ Sign up for an API Key today here[http://www.locomatix.com/signup], it's free!
 
 = Documentation
 
-There is a lot to learn about the concepts underlying the Locomatix system in order to take full advantage of it.  Complete documentation is available here[http://www.locomatix.com/docs/0.9/overview].
+More detailed documentation is available here[http://www.locomatix.com/docs/0.9/overview].
 
 = Command Line Utility
 
