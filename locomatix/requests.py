@@ -109,8 +109,8 @@ class DeleteObjectRequest(LocomatixRequest):
 
 class ListObjectsRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['ListObjects']
-  def __init__(self, feed, fetch_start, fetch_size):
-    params = { 'feed':feed, 'fetchstart':fetch_start, 'fetchsize':fetch_size }
+  def __init__(self, feed, start_key, fetch_size):
+    params = { 'feed':feed, 'startkey':start_key, 'fetchsize':fetch_size }
     super(ListObjectsRequest, self).__init__(params)
 
 
@@ -208,9 +208,9 @@ class GetZoneRequest(LocomatixRequest):
 
 class ListZonesRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['ListZones']
-  def __init__(self, objectid, feed, fetch_start, fetch_size):
+  def __init__(self, objectid, feed, start_key, fetch_size):
     params = { 'feed':feed, 'oid':objectid, \
-               'fetchstart':fetch_start, 'fetchsize':fetch_size }
+               'startkey':start_key, 'fetchsize':fetch_size }
     super(ListZonesRequest, self).__init__(params)
 
 
@@ -255,8 +255,8 @@ class GetFenceRequest(LocomatixRequest):
 
 class ListFencesRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['ListFences']
-  def __init__(self, fetch_start, fetch_size):
-    params = { 'fetchstart':fetch_start, 'fetchsize':fetch_size }
+  def __init__(self, start_key, fetch_size):
+    params = { 'startkey':start_key, 'fetchsize':fetch_size }
     super(ListFencesRequest, self).__init__(params)
 
 
