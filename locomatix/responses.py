@@ -56,6 +56,7 @@ class ListObjectsResponse(LocomatixResponse):
   HANDLER = ListObjectsResponseHandler()
   def __init__(self, http_response, feed=None, *args):
     super(ListObjectsResponse, self).__init__(http_response)
+    self.next_key = self.handler.next_key
     self.objects = self.handler.objects
     for obj in self.objects:
       obj.feed = feed
@@ -116,6 +117,7 @@ class ListZonesResponse(LocomatixResponse):
   HANDLER = ListZonesResponseHandler()
   def __init__(self, http_response, *args):
     super(ListZonesResponse, self).__init__(http_response)
+    self.next_key = self.handler.next_key
     self.zones  = self.handler.zones
 
 
@@ -138,6 +140,7 @@ class ListFencesResponse(LocomatixResponse):
   HANDLER = ListFencesResponseHandler()
   def __init__(self, http_response, *args):
     super(ListFencesResponse, self).__init__(http_response)
+    self.next_key = self.handler.next_key
     self.fences = self.handler.fences
 
 

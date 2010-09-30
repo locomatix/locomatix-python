@@ -18,7 +18,5 @@
 __all__ = ['argsparser', 'service','requests','responses','response_handlers','cli']
 
 from service import Service
-from service import LocomatixConnectionFailed
-from service import LocomatixRequestFailed
 from argsparser import ArgsParser
 from defaults import *

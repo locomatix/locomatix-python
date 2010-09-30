@@ -27,8 +27,9 @@ DEFAULT_LOCOMATIX_VERSION = '0.9'
 DEFAULT_LOCOMATIX_HOST = 'api.locomatix.com'
 DEFAULT_LOCOMATIX_PORTS = { False:80, True:443 }
 
-DEFAULT_FETCH_START   = 0
-DEFAULT_FETCH_SIZE    = 20
+DEFAULT_FETCH_STARTKEY   = ''
+DEFAULT_FETCH_START  = 0
+DEFAULT_FETCH_SIZE  = 20
 
 REQUEST_RESPONSES = {
   'create_object':     (CreateObjectRequest,     CreateObjectResponse),
@@ -138,20 +139,20 @@ class Service():
     return self._request('delete_object', objectid, feed)
   
   def list_objects(self, feed, 
-                          fetch_start=DEFAULT_FETCH_START, \
+                          start_key=DEFAULT_FETCH_STARTKEY, \
                           fetch_size=DEFAULT_FETCH_SIZE):
     """List all the objects and its attributes in the feed.
     
     Args:
       feed: a feed name, required
-      fetch_start: the index of the first object to return in a batch, optional
+      start_key: the key of the object to return in a batch, optional
         default = 0
       fetch_size: number of objects to return in a batch, optional
         default = 20
     
     Return:
       A ListObjectsResponse object"""
-    return self._request('list_objects', feed, fetch_start, fetch_size)
+    return self._request('list_objects', feed, start_key, fetch_size)
   
   def list_objects_iterator(self, feed, fetch_size=DEFAULT_FETCH_SIZE):
     """Returns an iterator over batches of objects in the given feed.
@@ -167,7 +168,7 @@ class Service():
         for obj in batch.objects
           # do something with the object
     """
-    fetch_start = 0
+    fetch_start = DEFAULT_FETCH_STARTKEY
     while True:
       batch = self.list_objects(feed, fetch_start, fetch_size)
       if (batch.status > httplib.OK or len(batch.objects) == 0):
@@ -175,7 +176,7 @@ class Service():
       yield batch
       if len(batch.objects) < fetch_size:
         break # this is the last batch
-      fetch_start += fetch_size
+      fetch_start = batch.next_key
   
   def update_attributes(self, objectid, feed, name_values):
     """Update the attributes of an existing object.
@@ -363,21 +364,21 @@ class Service():
     return self._request('get_zone', zoneid, objectid, feed)
   
   def list_zones(self, objectid, feed,
-                          fetch_start=DEFAULT_FETCH_START, \
+                          start_key=DEFAULT_FETCH_STARTKEY, \
                           fetch_size=DEFAULT_FETCH_SIZE):
     """List all the Zones and its definitions associated with an object.
     
     Args:
       objectid: a unique existing object ID, required
       feed: a feed name, required
-      fetch_start: the index of the first zone to return in a batch, optional
+      start_key: the index of the first zone to return in next batch, optional
         default = 0
       fetch_size: number of zones to return in a batch, optional
         default = 20
     
     Return:
       A ListZonesResponse object"""
-    return self._request('list_zones', objectid, feed, fetch_start, fetch_size)
+    return self._request('list_zones', objectid, feed, start_key, fetch_size)
   
   def list_zones_iterator(self, objectid, feed,
                                 fetch_size=DEFAULT_FETCH_SIZE):
@@ -391,7 +392,7 @@ class Service():
 
     Return:
       An iterator over batches of zones associated with the object."""
-    fetch_start = 0
+    fetch_start = DEFAULT_FETCH_STARTKEY
     while True:
       batch = self.list_zones(objectid, feed, fetch_start, fetch_size)
       if (batch.status > httplib.OK or len(batch.zones) == 0):
@@ -399,7 +400,7 @@ class Service():
       yield batch
       if len(batch.zones) < fetch_size:
         break # this is the last batch
-      fetch_start += fetch_size
+      fetch_start = batch.next_key
   
   def delete_zone(self, zoneid, objectid, feed):
     """Delete a Zone associated with an object.
@@ -442,19 +443,19 @@ class Service():
       A GetFenceResponse object"""
     return self._request('get_fence', fenceid)
   
-  def list_fences(self, fetch_start=DEFAULT_FETCH_START, \
+  def list_fences(self, start_key=DEFAULT_FETCH_STARTKEY, \
                         fetch_size=DEFAULT_FETCH_SIZE):
     """Get the definition of all existing Fences.
     
     Args:
-      fetch_start: the index of the first zone to return in a batch, optional
+      start_key: the index of the first zone to return in a batch, optional
         default = 0
       fetch_size: number of zones to return in a batch, optional
         default = 20
 
     Return:
       A ListFencesResponse object"""
-    return self._request('list_fences', fetch_start, fetch_size)
+    return self._request('list_fences', start_key, fetch_size)
   
   def list_fences_iterator(self, fetch_size=DEFAULT_FETCH_SIZE):
     """Returns an iterator over batches of fences.
@@ -465,7 +466,7 @@ class Service():
 
     Return:
       An iterator over batches of fences"""
-    fetch_start = 0
+    fetch_start = DEFAULT_FETCH_STARTKEY
     while True:
       batch = self.list_fences(fetch_start, fetch_size)
       if (batch.status > httplib.OK or len(batch.fences) == 0):
@@ -473,7 +474,7 @@ class Service():
       yield batch
       if len(batch.fences) < fetch_size:
         break # this is the last batch
-      fetch_start += fetch_size
+      fetch_start = batch.next_key
   
   def delete_fence(self, fenceid):
     """Delete an existing Fence.

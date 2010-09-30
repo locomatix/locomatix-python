@@ -30,8 +30,8 @@ class ArgsParser:
           self.add_option('help',       'h',  'help',       'Print help message')
 
           # Read the credentials from the locomatix startup file, if it exists
-          myhome = os.getenv("HOME")
-          config_file = myhome + '/.lxrc'    
+          myhome = os.path.expanduser('~')
+          config_file = os.path.join(myhome, '.lxrc')
           try:
               handle = open(config_file, 'r')
 

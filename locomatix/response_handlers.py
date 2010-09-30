@@ -77,6 +77,7 @@ class ListObjectsResponseHandler(LxResponseHandler):
     LxResponseHandler.__init__(self)
     self.curr_object = None
     self.objects = []
+    self.next_key = None
     
   def startElement(self, name, attrs):
     if name == 'Object':
@@ -87,6 +88,8 @@ class ListObjectsResponseHandler(LxResponseHandler):
       self.curr_object.objectid = self.curr_text
     elif name == 'Name':
       self.col_name = self.curr_text
+    elif name == 'NextKey':
+      self.next_key = self.curr_text
     elif name == 'Value':
       self.curr_object.name_values[self.col_name] = self.curr_text
     elif name == 'Object':
@@ -182,6 +185,7 @@ class ListZonesResponseHandler(LxResponseHandler):
     self.zones = []
     self.curr_zone = None
     self.parent_name = None
+    self.next_key = None
     
   def startElement(self, name, attrs):
     if name == 'Zone':
@@ -215,6 +219,8 @@ class ListZonesResponseHandler(LxResponseHandler):
         self.curr_zone.object.objectid = self.curr_text
     elif name == 'FromFeeds':
       self.curr_zone.all_feeds = (self.curr_text.lower() == 'all')
+    elif name == 'NextKey':
+      self.next_key = self.curr_text
     elif name == 'Zone':
       self.zones.append(self.curr_zone)
 
@@ -250,6 +256,7 @@ class ListFencesResponseHandler(LxResponseHandler):
     LxResponseHandler.__init__(self)
     self.fences = []
     self.curr_fence = None
+    self.next_key = None
     
   def startElement(self, name, attrs):
     if name == 'Fence':
@@ -276,5 +283,7 @@ class ListFencesResponseHandler(LxResponseHandler):
       self.curr_fence.from_feeds.append(self.curr_text)
     elif name == 'FromFeeds':
       self.curr_fence.all_feeds = (self.curr_text.lower() == 'all')
+    elif name == 'NextKey':
+      self.next_key = self.curr_text
     elif name == 'Fence':
       self.fences.append(self.curr_fence)
