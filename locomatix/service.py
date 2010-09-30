@@ -174,7 +174,7 @@ class Service():
       if (batch.status > httplib.OK or len(batch.objects) == 0):
         break # there was some error or there are no results
       yield batch
-      if len(batch.objects) < fetch_size:
+      if batch.next_key == None:
         break # this is the last batch
       fetch_start = batch.next_key
   
@@ -398,7 +398,7 @@ class Service():
       if (batch.status > httplib.OK or len(batch.zones) == 0):
         break # there was some error or there were no results
       yield batch
-      if len(batch.zones) < fetch_size:
+      if batch.next_key == None:
         break # this is the last batch
       fetch_start = batch.next_key
   
@@ -472,7 +472,7 @@ class Service():
       if (batch.status > httplib.OK or len(batch.fences) == 0):
         break # there was some error or there were no results
       yield batch
-      if len(batch.fences) < fetch_size:
+      if batch.next_key == None:
         break # this is the last batch
       fetch_start = batch.next_key
   
