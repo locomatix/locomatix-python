@@ -19,7 +19,7 @@ def update_attributes():
     nvpairs[nv[0].strip()] = nv[1].strip()
   
   try:
-    lxsvc = locomatix.Service(args['custid'], \
+    lxclient = locomatix.Client(args['custid'], \
                              args['key'], \
                              args['secret-key'], \
                              args['host'], \
@@ -29,7 +29,8 @@ def update_attributes():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  response = lxsvc.update_attributes(args['objectid'], args['feed'], nvpairs)
+  objectkey = locomatix.ObjectKey(args['objectid'], args['feed'])
+  response = lxclient.update_attributes(objectkey, nvpairs)
   
   if response.status != httplib.OK:
     print "error: updating attributes for object (%s in %s) - %s" % (args['objectid'], \

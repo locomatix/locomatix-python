@@ -15,8 +15,13 @@
 # limitations under the License.
 #
 ###############################################################################
-__all__ = ['argsparser', 'service','requests','responses','response_handlers','cli']
+__all__ = ['argsparser', 'client','requests','responses', 'keys', \
+           'region', 'object_region', 'callback', 'response_handlers','cli']
 
-from service import Service
 from argsparser import ArgsParser
+from client import Client
+from region import *
+from object_region import *
+from callback import *
+from keys import *
 from defaults import *

@@ -15,7 +15,7 @@ def search_nearby():
   args = parser.parse_args(sys.argv)
   
   try:
-    lxsvc = locomatix.Service(args['custid'], \
+    lxclient = locomatix.Client(args['custid'], \
                              args['key'], \
                              args['secret-key'], \
                              args['host'], \
@@ -25,12 +25,11 @@ def search_nearby():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  feed = args['feed']
-  objectid = args['objectid']
-  region = { 'type':'Circle', 'radius': args['radius'] }
+  objectkey = locomatix.ObjectKey(args['objectid'], args['feed'])
+  region = locomatix.CircleObjectRegion(args['radius'])
   from_feeds = args['from-feeds']
   
-  for batch in lxsvc.search_nearby_iterator(objectid, feed, region, from_feeds):
+  for batch in lxclient.search_nearby_iterator(objectkey, region, from_feeds):
     for obj in batch.objects:
       print obj
 

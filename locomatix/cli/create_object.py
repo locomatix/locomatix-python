@@ -19,7 +19,7 @@ def create_object():
     nvpairs[nv[0].strip()] = nv[1].strip()
   
   try:
-    lxsvc = locomatix.Service(args['custid'], \
+    lxclient = locomatix.Client(args['custid'], \
                              args['key'], \
                              args['secret-key'], \
                              args['host'], \
@@ -29,7 +29,8 @@ def create_object():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  response = lxsvc.create_object(args['objectid'], args['feed'], nvpairs)
+  objectkey = locomatix.ObjectKey(args['objectid'], args['feed'])
+  response = lxclient.create_object(objectkey, nvpairs)
   
   if response.status != httplib.OK:
     print "error: creating object (%s in %s) - %s" % (args['objectid'], args['feed'], response.message)

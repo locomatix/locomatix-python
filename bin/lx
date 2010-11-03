@@ -21,23 +21,25 @@ class Subcommand():
     self.method = method
 
 SUBCOMMANDS = [
-  Subcommand('create-object',     'co',  cli.create_object),
-  Subcommand('delete-object',     'do',  cli.delete_object),
-  Subcommand('list-objects',      'lo',  cli.list_objects),
-  Subcommand('update-attributes', 'ua',  cli.update_attributes),
-  Subcommand('get-attributes',    'ga',  cli.get_attributes),
-  Subcommand('update-location',   'ul',  cli.update_location),
-  Subcommand('get-location',      'gl',  cli.get_location),
-  Subcommand('create-zone',       'cz',  cli.create_zone),
-  Subcommand('get-zone',          'gz',  cli.get_zone),
-  Subcommand('delete-zone',       'dz',  cli.delete_zone),
-  Subcommand('list-zones',        'lz',  cli.list_zones),
-  Subcommand('create-fence',      'cf',  cli.create_fence),
-  Subcommand('get-fence',         'gf',  cli.get_fence),
-  Subcommand('delete-fence',      'df',  cli.delete_fence),
-  Subcommand('list-fences',       'lf',  cli.list_fences),
-  Subcommand('search-region',     'sr',  cli.search_region),
-  Subcommand('search-nearby',     'sn',  cli.search_nearby)
+  Subcommand('create-object',        'co',  cli.create_object),
+  Subcommand('delete-object',        'do',  cli.delete_object),
+  Subcommand('list-objects',         'lo',  cli.list_objects),
+  Subcommand('update-attributes',    'ua',  cli.update_attributes),
+  Subcommand('get-attributes',       'ga',  cli.get_attributes),
+  Subcommand('update-location',      'ul',  cli.update_location),
+  Subcommand('get-location',         'gl',  cli.get_location),
+  Subcommand('create-zone',          'cz',  cli.create_zone),
+  Subcommand('get-zone',             'gz',  cli.get_zone),
+  Subcommand('delete-zone',          'dz',  cli.delete_zone),
+  Subcommand('list-zones',           'lz',  cli.list_zones),
+  Subcommand('create-fence',         'cf',  cli.create_fence),
+  Subcommand('get-fence',            'gf',  cli.get_fence),
+  Subcommand('delete-fence',         'df',  cli.delete_fence),
+  Subcommand('list-fences',          'lf',  cli.list_fences),
+  Subcommand('search-region',        'sr',  cli.search_region),
+  Subcommand('search-nearby',        'sn',  cli.search_nearby),
+  Subcommand('get-location-history', 'lh',  cli.get_location_history),
+  Subcommand('get-space-activity',   'sa',  cli.get_space_activity)
 ]
 
 def find_subcommand(subcmd):

@@ -14,7 +14,7 @@ def delete_zone():
   args = parser.parse_args(sys.argv)
   
   try:
-    lxsvc = locomatix.Service(args['custid'], \
+    lxclient = locomatix.Client(args['custid'], \
                              args['key'], \
                              args['secret-key'], \
                              args['host'], \
@@ -24,7 +24,8 @@ def delete_zone():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  response = lxsvc.delete_zone(args['zoneid'], args['objectid'], args['feed'])
+  zonekey = locomatix.ZoneKey(args['zoneid'], args['objectid'], args['feed'])
+  response = lxclient.delete_zone(zonekey)
   
   if response.status != httplib.OK:
     print "error: deleting zone (%s around %s in %s) - %s" % (args['zoneid'], args['objectid'], \

@@ -28,7 +28,7 @@ def update_location():
     nvpairs[nv[0].strip()] = nv[1].strip()
   
   try:
-    lxsvc = locomatix.Service(args['custid'], \
+    lxclient = locomatix.Client(args['custid'], \
                              args['key'], \
                              args['secret-key'], \
                              args['host'], \
@@ -38,10 +38,12 @@ def update_location():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  response = lxsvc.update_location(objectid, feedid, longitude, latitude, time, nvpairs)
+  objectkey = locomatix.ObjectKey(args['objectid'], args['feed'])
+  response = lxclient.update_location(objectkey, longitude, latitude, time, nvpairs)
   
   if response.status != httplib.OK:
-    print "error: updating location for object (%s in %s) - %s" % (objectid, feedid, response.message)
+    print "error: updating location for object (%s in %s) - %s" % (args['objectid'], \
+         args['feed'], response.message)
     sys.exit(1)
   
   print "Successfully updated location of object: %s" % objectid

@@ -15,7 +15,7 @@ def search_region():
   args = parser.parse_args(sys.argv)
   
   try:
-    lxsvc = locomatix.Service(args['custid'], \
+    lxclient = locomatix.Client(args['custid'], \
                              args['key'], \
                              args['secret-key'], \
                              args['host'], \
@@ -25,10 +25,10 @@ def search_region():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  region = { 'latitude': args['lat'], 'longitude': args['long'],  'type':'Circle', 'radius': args['radius'] }
+  region = locomatix.CircleRegion(args['long'], args['lat'], args['radius'])
   from_feeds = args['from-feeds']
   
-  for batch in lxsvc.search_region_iterator(region, from_feeds):
+  for batch in lxclient.search_region_iterator(region, from_feeds):
     for obj in batch.objects:
       print obj
 

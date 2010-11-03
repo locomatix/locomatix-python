@@ -134,11 +134,7 @@ class ArgsParser:
           return opargs
 
       def usage(self, sysargs):
-          print 'usage: ', sysargs[0], '[OPTIONS]', 
-
-          for i in range(len(self.rargs)):
-              rargs = self.ropts[self.rargs[i]]
-              print '[', rargs[1]+' |', rargs[3], ']', self.rargs[i],
+          print 'usage:', sysargs[0], '[ARGUMENTS]', 
 
           for i in range(len(self.pargs)):
               print self.pargs[i][0], 
@@ -147,12 +143,21 @@ class ArgsParser:
 
           if len(self.rargs) > 0: print 'Required arguments:'
           for i in range(len(self.rargs)):
+              if self.rargs[i] == 'custid' or self.rargs[i] == 'key' or \
+                 self.rargs[i] == 'secret-key' : continue 
               rargs = self.ropts[self.rargs[i]]
               print '  ', rargs[1]+',', rargs[3].ljust(20, ' '), rargs[4]
 
           # if len(self.pargs) > 0: print 'Positional arguments:'
           for i in range(len(self.pargs)):
               print '  ', self.pargs[i][0].ljust(24, ' '), self.pargs[i][1]
+
+          print '\nAuthentication arguments (Not required if they are in ~/.lxrc):'
+          for i in range(len(self.rargs)):
+              if self.rargs[i] == 'custid' or self.rargs[i] == 'key' or \
+                         self.rargs[i] == 'secret-key' : 
+                rargs = self.ropts[self.rargs[i]]
+                print '  ', rargs[1]+',', rargs[3].ljust(20, ' '), rargs[4]
 
           if len(self.oargs) > 0: print '\nOptional arguments:'
           for i in range(len(self.oargs)):

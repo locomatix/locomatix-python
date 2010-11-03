@@ -12,7 +12,7 @@ def get_fence():
   args = parser.parse_args(sys.argv)
   
   try:
-    lxsvc = locomatix.Service(args['custid'], \
+    lxclient = locomatix.Client(args['custid'], \
                              args['key'], \
                              args['secret-key'], \
                              args['host'], \
@@ -22,7 +22,8 @@ def get_fence():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  response = lxsvc.get_fence(args['fenceid'])
+  fencekey = locomatix.FenceKey(args['fenceid'])
+  response = lxclient.get_fence(fencekey)
   
   if response.status != httplib.OK:
     print "error: get fence %s - %s" % (args['fenceid'], response.message)

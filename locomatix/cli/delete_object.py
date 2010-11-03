@@ -13,7 +13,7 @@ def delete_object():
   args = parser.parse_args(sys.argv)
   
   try:
-    lxsvc = locomatix.Service(args['custid'], \
+    lxclient = locomatix.Client(args['custid'], \
                              args['key'], \
                              args['secret-key'], \
                              args['host'], \
@@ -23,7 +23,8 @@ def delete_object():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  response = lxsvc.delete_object(args['objectid'], args['feed'])
+  objectkey = locomatix.ObjectKey(args['objectid'], args['feed'])
+  response = lxclient.delete_object(objectkey)
   
   if response.status != httplib.OK:
     print "error: deleting object (%s in %s) - %s" % (args['objectid'], args['feed'], response.message)

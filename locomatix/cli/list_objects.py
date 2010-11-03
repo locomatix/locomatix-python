@@ -12,7 +12,7 @@ def list_objects():
   args = parser.parse_args(sys.argv)
   
   try:
-    lxsvc = locomatix.Service(args['custid'], \
+    lxclient = locomatix.Client(args['custid'], \
                              args['key'], \
                              args['secret-key'], \
                              args['host'], \
@@ -22,7 +22,8 @@ def list_objects():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  for batch in lxsvc.list_objects_iterator(args['feed']):
+  feedkey = locomatix.FeedKey(args['feed'])
+  for batch in lxclient.list_objects_iterator(feedkey):
     for obj in batch.objects:
       print obj
 

@@ -2,7 +2,8 @@ __all__ = ['create_object','delete_object','list_objects', \
            'update_attributes','get_attributes', \
            'update_location','get_location', \
            'create_zone','get_zone','delete_zone','list_zones', \
-           'create_fence','get_fence','delete_fence','list_fences'
+           'create_fence','get_fence','delete_fence','list_fences' \
+           'get_location_history', 'get_space_activity'
 ]
 
 from create_object import create_object
@@ -22,3 +23,5 @@ from delete_fence import delete_fence
 from list_fences import list_fences
 from search_region import search_region
 from search_nearby import search_nearby
+from get_location_history import get_location_history
+from get_space_activity import get_space_activity

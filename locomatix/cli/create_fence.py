@@ -19,7 +19,7 @@ def create_fence():
   args = parser.parse_args(sys.argv)
   
   try:
-    lxsvc = locomatix.Service(args['custid'], \
+    lxclient = locomatix.Client(args['custid'], \
                              args['key'], \
                              args['secret-key'], \
                              args['host'], \
@@ -29,20 +29,20 @@ def create_fence():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  fenceid    = args['fenceid']
-  region     = { 'type':'circle', 'radius':float(args['radius']), \
-                 'longitude':float(args['long']), 'latitude':float(args['lat']) }
+  fencekey   = locomatix.FenceKey(args['fenceid'])
+  region     = locomatix.CircleRegion(float(args['long']), float(args['lat']), \
+                                      float(args['radius']))
   trigger    = args['trigger']
-  callback   = { 'type':'URL', 'URL':args['callbackURL'] }
+  callback   = locomatix.URLCallback(args['callbackURL'])
   from_feeds = args['from-feeds']
   
-  response = lxsvc.create_fence(fenceid, region, trigger, callback, from_feeds)
+  response = lxclient.create_fence(fencekey, region, trigger, callback, from_feeds)
   
   if response.status != httplib.OK:
     print "error: creating fence %s - %s" % (args['fenceid'], response.message)
     sys.exit(1)
   
-  print "Successfully created fence: %s" % fenceid
+  print "Successfully created fence: %s" % args['fenceid']
 
 
 if __name__ == '__main__':

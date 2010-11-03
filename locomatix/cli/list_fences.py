@@ -11,7 +11,7 @@ def list_fences():
   args = parser.parse_args(sys.argv)
   
   try:
-    lxsvc = locomatix.Service(args['custid'], \
+    lxclient = locomatix.Client(args['custid'], \
                              args['key'], \
                              args['secret-key'], \
                              args['host'], \
@@ -21,7 +21,7 @@ def list_fences():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  for batch in lxsvc.list_fences_iterator():
+  for batch in lxclient.list_fences_iterator():
     for fence in batch.fences:
       print fence
 

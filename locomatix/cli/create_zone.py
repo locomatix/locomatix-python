@@ -18,7 +18,7 @@ def create_zone():
   args = parser.parse_args(sys.argv)
   
   try:
-    lxsvc = locomatix.Service(args['custid'], \
+    lxclient = locomatix.Client(args['custid'], \
                              args['key'], \
                              args['secret-key'], \
                              args['host'], \
@@ -28,23 +28,21 @@ def create_zone():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  zoneid     = args['zoneid']
-  objectid   = args['objectid']
-  feedid     = args['feed']
-  region     = { 'type':'circle', 'radius':float(args['radius']) }
+  zonekey    = locomatix.ZoneKey(args['zoneid'], args['objectid'], args['feed'])
+  region     = locomatix.CircleObjectRegion(float(args['radius']))
   trigger    = args['trigger']
-  callback   = { 'type':'URL', 'URL':args['callbackURL'] }
+  callback   = locomatix.URLCallback(args['callbackURL'])
   from_feeds = args['from-feeds']
   if from_feeds == ['']: from_feeds = []
   
-  response = lxsvc.create_zone(zoneid, objectid, feedid, region, trigger, callback, from_feeds)
+  response = lxclient.create_zone(zonekey, region, trigger, callback, from_feeds)
   
   if response.status != httplib.OK:
     print "error: creating zone (%s around %s in %s) - %s" % (args['zoneid'], args['objectid'], \
                   args['feed'], response.message)
     sys.exit(1)
   
-  print "Successfully created zone: %s" % zoneid
+  print "Successfully created zone: %s" % args['zoneid']
 
 
 if __name__ == '__main__':

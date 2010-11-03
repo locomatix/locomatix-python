@@ -37,8 +37,8 @@ class LocomatixResponse(object):
       # try to parse the XML response
       try:
         xml.sax.parseString(self.body, self.handler)
-      except:
-        print "Could not parse XML response"
+      except Exception, e:
+        print e, " - could not parse XML response"
       self.message = self.handler.message
     else:
       self.message = http_response.reason
@@ -54,21 +54,17 @@ class DeleteObjectResponse(LocomatixResponse):
 
 class ListObjectsResponse(LocomatixResponse):
   HANDLER = ListObjectsResponseHandler()
-  def __init__(self, http_response, feed=None, *args):
+  def __init__(self, http_response, *args):
     super(ListObjectsResponse, self).__init__(http_response)
     self.next_key = self.handler.next_key
     self.objects = self.handler.objects
-    for obj in self.objects:
-      obj.feed = feed
 
 
 class GetAttributesResponse(LocomatixResponse):
   HANDLER = GetAttributesResponseHandler()
-  def __init__(self, http_response, objectid=None, feed=None, *args):
+  def __init__(self, http_response, *args):
     super(GetAttributesResponse, self).__init__(http_response)
     self.object = self.handler.object
-    self.object.objectid = objectid
-    self.object.feed     = feed
 
 
 class UpdateAttributesResponse(LocomatixResponse):
@@ -81,11 +77,9 @@ class UpdateLocationResponse(LocomatixResponse):
 
 class GetLocationResponse(LocomatixResponse):
   HANDLER = GetLocationResponseHandler()
-  def __init__(self, http_response, objectid=None, feed=None, *args):
+  def __init__(self, http_response, *args):
     super(GetLocationResponse, self).__init__(http_response)
     self.object = self.handler.object
-    self.object.objectid = objectid
-    self.object.feed     = feed
 
 
 class SearchNearbyResponse(LocomatixResponse):
@@ -93,6 +87,7 @@ class SearchNearbyResponse(LocomatixResponse):
   def __init__(self, http_response, *args):
     super(SearchNearbyResponse, self).__init__(http_response)
     self.objects = self.handler.objects
+    self.next_key = self.handler.next_key
 
 
 class SearchRegionResponse(LocomatixResponse):
@@ -100,6 +95,7 @@ class SearchRegionResponse(LocomatixResponse):
   def __init__(self, http_response, *args):
     super(SearchRegionResponse, self).__init__(http_response)
     self.objects = self.handler.objects
+    self.next_key = self.handler.next_key
 
 
 class CreateZoneResponse(LocomatixResponse):
@@ -146,3 +142,20 @@ class ListFencesResponse(LocomatixResponse):
 
 class DeleteFenceResponse(LocomatixResponse):
   HANDLER = StatusResponseHandler()
+
+
+class GetLocationHistoryResponse(LocomatixResponse):
+  HANDLER = GetLocationHistoryResponseHandler()
+  def __init__(self, http_response, objectkey = None, *args):
+    super(GetLocationHistoryResponse, self).__init__(http_response)
+    self.objectkey = objectkey
+    self.locations = self.handler.locations
+    self.next_key = self.handler.next_key
+
+
+class GetSpaceActivityResponse(LocomatixResponse):
+  HANDLER = GetSpaceActivityResponseHandler()
+  def __init__(self, http_response, *args):
+    super(GetSpaceActivityResponse, self).__init__(http_response)
+    self.objects = self.handler.objects
+    self.next_key = self.handler.next_key

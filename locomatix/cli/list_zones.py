@@ -14,7 +14,7 @@ def list_zones():
   args = parser.parse_args(sys.argv)
   
   try:
-    lxsvc = locomatix.Service(args['custid'], \
+    lxclient = locomatix.Client(args['custid'], \
                              args['key'], \
                              args['secret-key'], \
                              args['host'], \
@@ -24,7 +24,8 @@ def list_zones():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  for batch in lxsvc.list_zones_iterator(args['objectid'], args['feed']):
+  objectkey = locomatix.ObjectKey(args['objectid'], args['feed'])
+  for batch in lxclient.list_zones_iterator(objectkey):
     for zone in batch.zones:
       print zone
 

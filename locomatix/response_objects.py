@@ -1,18 +1,24 @@
-class PrintableAttributes:
+class PrintableAttributes(object):
   """Base class for all objects returned in locomatix responses."""
   def __str__(self):
     """Returns a json-like representation of the object"""
-    return str(self.__dict__)
+    params = self.__dict__
+    if '_params' in params:
+      del params['_params']
+    return str(params)
+
   def __repr__(self):
     """Returns a json-like representation of the object"""
-    return str(self.__dict__)
+    params = self.__dict__
+    if '_params' in params:
+      del params['_params']
+    return str(params)
 
 
 class LxObject(PrintableAttributes):
   """Represents a locomatix object."""
   def __init__(self):
-    self.objectid = None
-    self.feed = None
+    self.objectkey = None
     self.name_values = dict()
     self.location = None
 
@@ -27,23 +33,19 @@ class LxLocation(PrintableAttributes):
 class LxFence(PrintableAttributes):
   """Represents a locomatix fence."""
   def __init__(self):
-    self.fenceid = None
-    self.region = dict()
+    self.fencekey = None
+    self.region = None
     self.trigger = None
-    self.callback = dict()
+    self.callback = None
     self.all_feeds = False
     self.from_feeds = []
 
 class LxZone(PrintableAttributes):
   """Represents a locomatix zone."""
   def __init__(self):
-    self.zoneid = None
-    self.object = None
-    self.region = dict()
+    self.zonekey = None
+    self.object_region = None
     self.trigger = None
-    self.callback = dict()
+    self.callback = None
     self.all_feeds = False
     self.from_feeds = []
-    
-
-    
