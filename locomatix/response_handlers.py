@@ -399,9 +399,9 @@ class GetSpaceActivityResponseHandler(LxResponseHandler):
 
   def afterEndElement(self, name):
     if name == 'Feed':
-      self.curr_object.objectkey.feed = self.curr_text
+      self.curr_object.feed = self.curr_text
     elif name == 'ObjectID':
-      self.curr_object.objectkey.objectid = self.curr_text
+      self.curr_object.objectid = self.curr_text
     elif name == 'Longitude':
       self.curr_object.location.longitude = float(self.curr_text)
     elif name == 'Longitude':
