@@ -29,8 +29,9 @@ def update_attributes():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  objectkey = locomatix.ObjectKey(args['objectid'], args['feed'])
-  response = lxclient.update_attributes(objectkey, nvpairs)
+  objectid = args['objectid']
+  feed = args['feed']
+  response = lxclient.update_attributes(objectid, feed, nvpairs)
   
   if response.status != httplib.OK:
     print "error: updating attributes for object (%s in %s) - %s" % (args['objectid'], \

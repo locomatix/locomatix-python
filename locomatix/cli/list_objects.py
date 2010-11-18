@@ -22,8 +22,8 @@ def list_objects():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  feedkey = locomatix.FeedKey(args['feed'])
-  for batch in lxclient.list_objects_iterator(feedkey):
+  feed = args['feed']
+  for batch in lxclient.list_objects_iterator(feed):
     for obj in batch.objects:
       print obj
 

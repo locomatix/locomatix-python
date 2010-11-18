@@ -25,8 +25,9 @@ def get_location_history():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  objectkey = locomatix.ObjectKey(args['objectid'], args['feed'])
-  for batch in lxclient.get_location_history_iterator(objectkey, \
+  objectid = args['objectid']
+  feed = args['feed']
+  for batch in lxclient.get_location_history_iterator(objectid, feed, \
                          args['starttime'], args['endtime']):
     for obj in batch.locations:
       print obj

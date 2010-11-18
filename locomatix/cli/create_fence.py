@@ -29,7 +29,7 @@ def create_fence():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  fencekey   = locomatix.FenceKey(args['fenceid'])
+  fencekey   = args['fenceid']
   region     = locomatix.CircleRegion(float(args['long']), float(args['lat']), \
                                       float(args['radius']))
   trigger    = args['trigger']

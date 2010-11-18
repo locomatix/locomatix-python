@@ -27,10 +27,10 @@ def get_space_activity():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  feedkey = locomatix.FeedKey(args['feed'])
+  feed = args['feed']
   region = locomatix.CircleRegion(args['long'], args['lat'], args['radius'])
   
-  for batch in lxclient.get_space_activity_iterator(feedkey, region, args['starttime'], args['endtime']):
+  for batch in lxclient.get_space_activity_iterator(feed, region, args['starttime'], args['endtime']):
     for obj in batch.objects:
       print obj
 

@@ -117,34 +117,36 @@ class Client():
     """Closes the connection with the remote Locomatix server."""
     self._conn.close()
   
-  def create_object(self, objectkey, name_values={}):
+  def create_object(self, objectid, feed, name_values={}):
     """Creates an object.
     
     Args:
-      objectkey: Key that uniquely identifes the object, required
+      objectid: Key that uniquely identifes the object within the feed, required
+      feed: Feed name in which the object needs to be created, required
       name_values: a dictionary of name-value attribute pairs (optional)
     
     Return:
       A CreateObjectResponse object"""
-    return self._request('create_object', objectkey, name_values)
+    return self._request('create_object', objectid, feed, name_values)
   
-  def delete_object(self, objectkey):
+  def delete_object(self, objectid, feed):
     """Delete an object.
     
     Args:
-      objectkey: Key that uniquely identifes the object, required
+      objectid: Key that uniquely identifes the object within the feed, required
+      feed: Feed name in which the object needs to be created, required
     
     Return:
       A DeleteObjectResponse object"""
-    return self._request('delete_object', objectkey)
+    return self._request('delete_object', objectid, feed)
   
-  def list_objects(self, feedkey, 
+  def list_objects(self, feed, 
                           start_key=DEFAULT_FETCH_STARTKEY, \
                           fetch_size=DEFAULT_FETCH_SIZE):
     """List all the objects and its attributes in the feed.
     
     Args:
-      feedkey: Key that represents the feed, required
+      feed: A feed name, required
       start_key: the key of the object to return in a batch, optional
         default = ""
       fetch_size: number of objects to return in a batch, optional
@@ -152,13 +154,13 @@ class Client():
     
     Return:
       A ListObjectsResponse object"""
-    return self._request('list_objects', feedkey, start_key, fetch_size)
+    return self._request('list_objects', feed, start_key, fetch_size)
   
-  def list_objects_iterator(self, feedkey, fetch_size=DEFAULT_FETCH_SIZE):
+  def list_objects_iterator(self, feed, fetch_size=DEFAULT_FETCH_SIZE):
     """Returns an iterator over batches of objects in the given feed.
     
     Args:
-      feedkey: Key that represents the feed, required
+      feed: A feed name, required
       fetch_size: number of objects to return in a batch, optional
         default = 20
     
@@ -170,7 +172,7 @@ class Client():
     """
     fetch_start = DEFAULT_FETCH_STARTKEY
     while True:
-      batch = self.list_objects(feedkey, fetch_start, fetch_size)
+      batch = self.list_objects(feed, fetch_start, fetch_size)
       if (batch.status > httplib.OK or len(batch.objects) == 0):
         break # there was some error or there are no results
       yield batch
@@ -178,32 +180,35 @@ class Client():
         break # this is the last batch
       fetch_start = batch.next_key
   
-  def update_attributes(self, objectkey, name_values):
+  def update_attributes(self, objectid, feed, name_values):
     """Update the attributes of an existing object.
     
     Args:
-      objectkey: Key that uniquely identifes the object, required
+      objectid: Key that uniquely identifes the object within the feed, required
+      feed: Feed name in which the object needs to be updated, required
       name_values: the new attributes to associate with the object, required
     
     Return:
       An UpdateAttributesResponse object"""
-    return self._request('update_attributes', objectkey, name_values)
+    return self._request('update_attributes', objectid, feed, name_values)
   
-  def get_attributes(self, objectkey):
+  def get_attributes(self, objectid, feed):
     """Get the attributes of an existing object.
     
     Args:
-      objectkey: Key that uniquely identifes the object, required
+      objectid: Key that uniquely identifes the object within the feed, required
+      feed: Feed name that contains the object, required
     
     Return:
       A GetAttributesResponse object"""
-    return self._request('get_attributes', objectkey)
+    return self._request('get_attributes', objectid, feed)
   
-  def update_location(self, objectkey, longitude, latitude, time, name_values={}):
+  def update_location(self, objectid, feed, longitude, latitude, time, name_values={}):
     """Update the Location of an existing object.
     
     Args:
-      objectkey: Key that uniquely identifes the object, required
+      objectid: Key that uniquely identifes the object within the feed, required
+      feed: Feed name that contains the object, required
       longitude: longitude (decimal degrees), required
       latitude: latitude (decimal degrees), required
       time: seconds since unix epoch, required
@@ -211,26 +216,28 @@ class Client():
     
     Return:
       An UpdateLocationResponse object"""
-    return self._request('update_location', objectkey, longitude, latitude, time, name_values)
+    return self._request('update_location', objectid, feed, longitude, latitude, time, name_values)
   
-  def get_location(self, objectkey):
+  def get_location(self, objectid, feed):
     """Get the current location of an object.
     
     Args:
-      objectkey: Key that uniquely identifes the object, required
+      objectid: Key that uniquely identifes the object within the feed, required
+      feed: Feed name that contains the object, required
     
     Return:
       A GetLocationResponse object"""
-    return self._request('get_location', objectkey)
+    return self._request('get_location', objectid, feed)
   
-  def search_nearby(self, objectkey, objectregion, \
+  def search_nearby(self, objectid, feed, objectregion, \
                           from_feeds=[], \
                           start_key=DEFAULT_FETCH_STARTKEY, \
                           fetch_size=DEFAULT_FETCH_SIZE):
     """Search in a region near an existing object.
     
     Args:
-      objectkey: Key that uniquely identifes the object, required
+      objectid: Key that uniquely identifes the object within the feed, required
+      feed: Feed name that contains the object, required
       objectregion : type and specification of region around the object
       from_feeds: list of feeds to search, optional
         default = [], searches only the feed of parent object
@@ -241,16 +248,17 @@ class Client():
     
     Return:
       A SearchNearbyResponse object"""
-    return self._request('search_nearby', objectkey, objectregion, \
+    return self._request('search_nearby', objectid, feed, objectregion, \
                                           from_feeds, start_key, fetch_size)
   
-  def search_nearby_iterator(self, objectkey, region, \
+  def search_nearby_iterator(self, objectid, feed, region, \
                              from_feeds=[], \
                              fetch_size=DEFAULT_FETCH_SIZE):
     """Iterates over batches of objects returned by the search.
     
     Args:
-      objectkey: Key that uniquely identifes the object, required
+      objectid: Key that uniquely identifes the object within the feed, required
+      feed: Feed name that contains the object, required
       region_type: type of region (only 'circle' supported), required
       region_params: dictionary of region parameters, distance in meters, required
         e.g. {'radius': 1000.0}
@@ -264,7 +272,7 @@ class Client():
     """
     start_key = DEFAULT_FETCH_STARTKEY
     while True:
-      batch = self.search_nearby(objectkey, region, from_feeds, \
+      batch = self.search_nearby(objectid, feed, region, from_feeds, \
                                  start_key, fetch_size)
       if (batch.status > httplib.OK or len(batch.objects) == 0):
         break # there was some error or there were no results
@@ -317,12 +325,14 @@ class Client():
         break # this is the last batch
       start_key = batch.next_key
   
-  def create_zone(self, zonekey, objectregion, \
+  def create_zone(self, zoneid, objectid, feed, objectregion, \
                         trigger, callback, from_feeds=[]):
     """Create a Zone associated with an existing object.
     
     Args:
-      zonekey: Key that uniquely identifes the zone, required
+      zoneid: a unique ID for the new Zone, required
+      objectid: Key that uniquely identifes the object within the feed, required
+      feed: Feed name that contains the object, required
       objectregion : type and specification of region around the object
       callback: type and specification for alerts to be POSTed, required
       from_feeds: list of feeds to search, optional
@@ -330,26 +340,29 @@ class Client():
     
     Return:
       A CreateZoneResponse object"""
-    return self._request('create_zone', zonekey, \
+    return self._request('create_zone', zoneid, objectid, feed, \
                              objectregion, trigger, callback, from_feeds)
   
-  def get_zone(self, zonekey):
+  def get_zone(self, zoneid, objectid, feed):
     """Get the Zone definition associated with an object.
     
     Args:
-      zonekey: Key that uniquely identifes the zone, required
+      zoneid: a unique ID for the new Zone, required
+      objectid: Key that uniquely identifes the object within the feed, required
+      feed: Feed name that contains the object, required
     
     Return:
       A GetZoneResponse object"""
-    return self._request('get_zone', zonekey)
+    return self._request('get_zone', zoneid, objectid, feed)
   
-  def list_zones(self, objectkey,
+  def list_zones(self, objectid, feed,
                           start_key=DEFAULT_FETCH_STARTKEY, \
                           fetch_size=DEFAULT_FETCH_SIZE):
     """List all the Zones and its definitions associated with an object.
     
     Args:
-      objectkey: Key that uniquely identifes the object, required
+      objectid: Key that uniquely identifes the object within the feed, required
+      feed: Feed name that contains the object, required
       start_key: the index of the first zone to return in next batch, optional
         default = ""
       fetch_size: number of zones to return in a batch, optional
@@ -357,14 +370,15 @@ class Client():
     
     Return:
       A ListZonesResponse object"""
-    return self._request('list_zones', objectkey, start_key, fetch_size)
+    return self._request('list_zones', objectid, feed, start_key, fetch_size)
   
-  def list_zones_iterator(self, objectkey,
+  def list_zones_iterator(self, objectid, feed,
                                 fetch_size=DEFAULT_FETCH_SIZE):
     """Returns an iterator over batches of zones associated with the object.
 
     Args:
-      objectkey: Key that uniquely identifes the object, required
+      objectid: Key that uniquely identifes the object within the feed, required
+      feed: Feed name that contains the object, required
       fetch_size: number of zones to return in a batch, optional
         default = 20
 
@@ -372,7 +386,7 @@ class Client():
       An iterator over batches of zones associated with the object."""
     fetch_start = DEFAULT_FETCH_STARTKEY
     while True:
-      batch = self.list_zones(objectkey, fetch_start, fetch_size)
+      batch = self.list_zones(objectid, feed, fetch_start, fetch_size)
       if (batch.status > httplib.OK or len(batch.zones) == 0):
         break # there was some error or there were no results
       yield batch
@@ -380,22 +394,24 @@ class Client():
         break # this is the last batch
       fetch_start = batch.next_key
   
-  def delete_zone(self, zonekey):
+  def delete_zone(self, zoneid, objectid, feed):
     """Delete a Zone associated with an object.
     
     Args:
-      zonekey: Key that uniquely identifes the zone, required
+      zoneid: a unique ID for the new Zone, required
+      objectid: Key that uniquely identifes the object within the feed, required
+      feed: Feed name that contains the object, required
     
     Return:
       A DeleteZoneResponse object"""
-    return self._request('delete_zone', zonekey)
+    return self._request('delete_zone', zoneid, objectid, feed)
   
-  def create_fence(self, fencekey, region, trigger,\
+  def create_fence(self, fenceid, region, trigger,\
                          callback, from_feeds):
     """Create a Fence at a fixed geographic location.
     
     Args:
-      fencekey: Key that uniquely identifes the fence, required
+      fenceid: a unique ID for the new Fence, required
       region : type and specification of region 
       callback: type and specification for alerts to be POSTed, required
       from_feeds: list of feeds to search, optional
@@ -403,18 +419,18 @@ class Client():
     
     Return:
       A CreateFenceResponse object"""
-    return self._request('create_fence', fencekey, region, \
+    return self._request('create_fence', fenceid, region, \
                                          trigger, callback, from_feeds)
   
-  def get_fence(self, fencekey):
+  def get_fence(self, fenceid):
     """Get the definition of an existing Fence.
     
     Args:
-      fencekey: Key that uniquely identifes the fence, required
+      fenceid: a unique ID for the new Fence, required
     
     Return:
       A GetFenceResponse object"""
-    return self._request('get_fence', fencekey)
+    return self._request('get_fence', fenceid)
   
   def list_fences(self, start_key=DEFAULT_FETCH_STARTKEY, \
                         fetch_size=DEFAULT_FETCH_SIZE):
@@ -449,23 +465,24 @@ class Client():
         break # this is the last batch
       fetch_start = batch.next_key
   
-  def delete_fence(self, fencekey):
+  def delete_fence(self, fenceid):
     """Delete an existing Fence.
     
     Args:
-      fencekey: Key that uniquely identifes the fence, required
+      fenceid: a unique ID for the new Fence, required
     
     Return:
       A DeleteFenceResponse object"""
-    return self._request('delete_fence', fencekey)
+    return self._request('delete_fence', fenceid)
   
-  def get_location_history(self, objectkey, start_time, end_time, \
+  def get_location_history(self, objectid, feed, start_time, end_time, \
                          start_key=DEFAULT_FETCH_STARTKEY, \
                          fetch_size=DEFAULT_FETCH_SIZE):
     """Get the location history of an object.
     
     Args:
-      objectkey: Key that represents a unique existing object, required
+      objectid: Key that uniquely identifes the object within the feed, required
+      feed: Feed name that contains the object, required
       start_time: start of the time slice to retrieve history
       end_time: end of the time slice to retrieve history
       start_key: the index of the first zone to return in a batch, optional
@@ -475,16 +492,16 @@ class Client():
 
     Return:
       A GetLocationHistoryResponse object"""
-    return self._request('get_location_history', objectkey, start_time, \
+    return self._request('get_location_history', objectid, feed, start_time, \
                           end_time, start_key, fetch_size)
   
-  def get_location_history_iterator(self, objectkey, start_time, end_time, \
+  def get_location_history_iterator(self, objectid, feed, start_time, end_time, \
                                     fetch_size=DEFAULT_FETCH_SIZE):
     """Returns an iterator over location history of object.
 
     Args:
-      objectkey: Key that represents a unique existing object, required
-      start_time: start of the time slice to retrieve history
+      objectid: Key that uniquely identifes the object within the feed, required
+      feed: Feed name that contains the object, required
       start_time: start of the time slice to retrieve history
       end_time: end of the time slice to retrieve history
       fetch_size: number of zones to return in a batch, optional
@@ -494,7 +511,7 @@ class Client():
       An iterator over location of object"""
     start_key = DEFAULT_FETCH_STARTKEY
     while True:
-      batch = self.get_location_history(objectkey, start_time, end_time, \
+      batch = self.get_location_history(objectid, feed, start_time, end_time, \
                                         start_key, fetch_size)
       if (batch.status > httplib.OK or len(batch.locations) == 0):
         break # there was some error or there were no results
@@ -503,13 +520,13 @@ class Client():
         break # this is the last batch
       start_key = batch.next_key
 
-  def get_space_activity(self, feedkey, region, start_time, end_time, \
+  def get_space_activity(self, feed, region, start_time, end_time, \
                          start_key=DEFAULT_FETCH_STARTKEY, \
                          fetch_size=DEFAULT_FETCH_SIZE):
     """Get the objects entered into the given space in a time slice
     
     Args:
-      feedkey: Key that represents the feed, required
+      feed: A feed name, required
       region: specify the region of interest
       start_time: start of the time slice to retrieve history
       end_time: end of the time slice to retrieve history
@@ -520,15 +537,15 @@ class Client():
 
     Return:
       A GetSpaceActivityResponse object"""
-    return self._request('get_space_activity', feedkey, region, start_time, \
+    return self._request('get_space_activity', feed, region, start_time, \
                           end_time, start_key, fetch_size)
   
-  def get_space_activity_iterator(self, feedkey, region, start_time, end_time, \
+  def get_space_activity_iterator(self, feed, region, start_time, end_time, \
                                   fetch_size=DEFAULT_FETCH_SIZE):
     """Returns an iterator over location history of object.
 
     Args:
-      feedkey: Key that represents the feed, required
+      feed: A feed name, required
       region: specifes the region of interest
       start_time: start of the time slice to retrieve history
       end_time: end of the time slice to retrieve history
@@ -539,7 +556,7 @@ class Client():
       An iterator over location of object"""
     start_key = DEFAULT_FETCH_STARTKEY
     while True:
-      batch = self.get_space_activity(feedkey, region, start_time, end_time, \
+      batch = self.get_space_activity(feed, region, start_time, end_time, \
                                       start_key, fetch_size)
       if (batch.status > httplib.OK or len(batch.objects) == 0):
         break # there was some error or there were no results

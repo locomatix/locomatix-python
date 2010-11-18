@@ -38,8 +38,10 @@ def update_location():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  objectkey = locomatix.ObjectKey(args['objectid'], args['feed'])
-  response = lxclient.update_location(objectkey, longitude, latitude, time, nvpairs)
+  objectid = args['objectid']
+  feed = args['feed']
+
+  response = lxclient.update_location(objectid, feed, longitude, latitude, time, nvpairs)
   
   if response.status != httplib.OK:
     print "error: updating location for object (%s in %s) - %s" % (args['objectid'], \

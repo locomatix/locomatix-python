@@ -29,8 +29,9 @@ def create_object():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  objectkey = locomatix.ObjectKey(args['objectid'], args['feed'])
-  response = lxclient.create_object(objectkey, nvpairs)
+  objectid = args['objectid']
+  feed = args['feed']
+  response = lxclient.create_object(objectid, feed, nvpairs)
   
   if response.status != httplib.OK:
     print "error: creating object (%s in %s) - %s" % (args['objectid'], args['feed'], response.message)

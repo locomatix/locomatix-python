@@ -23,8 +23,9 @@ def delete_object():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  objectkey = locomatix.ObjectKey(args['objectid'], args['feed'])
-  response = lxclient.delete_object(objectkey)
+  objectid = args['objectid']
+  feed     = args['feed']
+  response = lxclient.delete_object(objectid, feed)
   
   if response.status != httplib.OK:
     print "error: deleting object (%s in %s) - %s" % (args['objectid'], args['feed'], response.message)

@@ -28,14 +28,16 @@ def create_zone():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  zonekey    = locomatix.ZoneKey(args['zoneid'], args['objectid'], args['feed'])
+  zoneid    = args['zoneid']
+  objectid  = args['objectid']
+  feed      = args['feed']
   region     = locomatix.CircleObjectRegion(float(args['radius']))
   trigger    = args['trigger']
   callback   = locomatix.URLCallback(args['callbackURL'])
   from_feeds = args['from-feeds']
   if from_feeds == ['']: from_feeds = []
   
-  response = lxclient.create_zone(zonekey, region, trigger, callback, from_feeds)
+  response = lxclient.create_zone(zoneid, objectid, feed, region, trigger, callback, from_feeds)
   
   if response.status != httplib.OK:
     print "error: creating zone (%s around %s in %s) - %s" % (args['zoneid'], args['objectid'], \

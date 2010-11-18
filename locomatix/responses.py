@@ -146,9 +146,10 @@ class DeleteFenceResponse(LocomatixResponse):
 
 class GetLocationHistoryResponse(LocomatixResponse):
   HANDLER = GetLocationHistoryResponseHandler()
-  def __init__(self, http_response, objectkey = None, *args):
+  def __init__(self, http_response, objectid = None, feed = None, *args):
     super(GetLocationHistoryResponse, self).__init__(http_response)
-    self.objectkey = objectkey
+    self.objectid = objectid
+    self.feed = feed
     self.locations = self.handler.locations
     self.next_key = self.handler.next_key
 

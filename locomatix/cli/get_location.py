@@ -23,8 +23,9 @@ def get_location():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  objectkey = locomatix.ObjectKey(args['objectid'], args['feed'])
-  response = lxclient.get_location(objectkey)
+  objectid = args['objectid']
+  feed = args['feed']
+  response = lxclient.get_location(objectid, feed)
   
   if response.status != httplib.OK:
     print "error: getting location for object (%s in %s) - %s" % (args['objectid'], \

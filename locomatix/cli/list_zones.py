@@ -24,8 +24,9 @@ def list_zones():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  objectkey = locomatix.ObjectKey(args['objectid'], args['feed'])
-  for batch in lxclient.list_zones_iterator(objectkey):
+  objectid = args['objectid']
+  feed = args['feed']
+  for batch in lxclient.list_zones_iterator(objectid, feed):
     for zone in batch.zones:
       print zone
 

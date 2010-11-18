@@ -96,64 +96,66 @@ class LocomatixRequest(object):
 
 class CreateObjectRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['CreateObject']
-  def __init__(self, objectkey, name_values={}):
-    params = objectkey._params
+  def __init__(self, objectid, feed, name_values={}):
+    params = { 'feed':feed, 'oid':objectid }
     params.update(name_values)
     super(CreateObjectRequest, self).__init__(params)
 
 
 class DeleteObjectRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['DeleteObject']
-  def __init__(self, objectkey):
-    params = objectkey._params
+  def __init__(self, objectid, feed):
+    params = { 'feed':feed, 'oid':objectid }
     super(DeleteObjectRequest, self).__init__(params)
 
 
 class ListObjectsRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['ListObjects']
-  def __init__(self, feedkey, start_key, fetch_size):
-    params = { 'startkey':start_key, 'fetchsize':fetch_size }
-    params.update(feedkey._params)
+  def __init__(self, feed, start_key, fetch_size):
+    params = { 'feed' : feed, 'startkey':start_key, 'fetchsize':fetch_size }
     super(ListObjectsRequest, self).__init__(params)
 
 
 class GetAttributesRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['GetAttributes']
-  def __init__(self, objectkey):
-    params = objectkey._params
+  def __init__(self, objectid, feed):
+    params = { 'feed':feed, 'oid':objectid }
     super(GetAttributesRequest, self).__init__(params)
 
 
 class UpdateAttributesRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['UpdateAttributes']
-  def __init__(self, objectkey, name_values={}):
-    params = objectkey._params
+  def __init__(self, objectid, feed, name_values={}):
+    params = { 'feed':feed, 'oid':objectid }
     params.update(name_values)
     super(UpdateAttributesRequest, self).__init__(params)
 
 
 class UpdateLocationRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['UpdateLocation']
-  def __init__(self, objectkey, longitude, latitude, time, name_values={}):
-    params = { 'longitude':longitude, 'latitude':latitude, 'time': int(time) }
-    params.update(objectkey._params)
+  def __init__(self, objectid, feed, longitude, latitude, time, name_values={}):
+    params = { 'oid' : objectid, 'feed' : feed, \
+               'longitude':longitude, 'latitude':latitude, 'time': int(time) }
     params.update(name_values)
     super(UpdateLocationRequest, self).__init__(params)
 
 
 class GetLocationRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['GetLocation']
-  def __init__(self, objectkey):
-    params = objectkey._params
+  def __init__(self, objectid, feed):
+    params = { 'feed' : feed, 'oid' : objectid }
     super(GetLocationRequest, self).__init__(params)
 
 
 class SearchNearbyRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['SearchNearby']
-  def __init__(self, objectkey, zone, from_feeds, fetch_start, fetch_size):
-    params = { 'fetchstart':fetch_start, 'fetchsize':fetch_size }
+  def __init__(self, objectid, feed, region, from_feeds, fetch_start, fetch_size):
+    params = { 
+      'feed' : feed, 'oid' : objectid, \
+      'fetchstart':fetch_start, 'fetchsize':fetch_size 
+    }
     params.update(objectkey._params)
-    params.update(zone._params)
+    params.update(region._params)
     if len(from_feeds) == 0: from_feeds.append(objectkey.feed)
     params['feeds'] = ','.join(from_feeds)
     super(SearchNearbyRequest, self).__init__(params)
@@ -173,43 +175,46 @@ class SearchRegionRequest(LocomatixRequest):
 
 class CreateZoneRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['CreateZone']
-  def __init__(self, zonekey, zone, trigger, callback, from_feeds=[]):
-    params = { 'trigger': trigger, }
-    params.update(zonekey._params)
-    params.update(zone._params)
+  def __init__(self, zoneid, objectid, feed, region, trigger, callback, from_feeds=[]):
+    params = { 
+      'zoneid' : zoneid, 'oid' : objectid, \
+      'feed' : feed, 'trigger': trigger \
+    }
+    params.update(region._params)
     params.update(callback._params)
-    if len(from_feeds) == 0: from_feeds.append(zonekey.feed)
+    if len(from_feeds) == 0: from_feeds.append(feed)
     params['feeds'] = ','.join(from_feeds)
     super(CreateZoneRequest, self).__init__(params)
 
 
 class GetZoneRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['GetZone']
-  def __init__(self, zonekey):
-    params = zonekey._params
+  def __init__(self, zoneid, objectid, feed):
+    params = { 'zoneid' : zoneid, 'oid' : objectid, 'feed' : feed }
     super(GetZoneRequest, self).__init__(params)
 
 
 class ListZonesRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['ListZones']
-  def __init__(self, objectkey, start_key, fetch_size):
-    params = { 'startkey':start_key, 'fetchsize':fetch_size }
-    params.update(objectkey._params)
+  def __init__(self, objectid, feed, start_key, fetch_size):
+    params = { \
+      'oid' : objectid, 'feed' : feed, \
+      'startkey' : start_key, 'fetchsize' : fetch_size  \
+    }
     super(ListZonesRequest, self).__init__(params)
 
 
 class DeleteZoneRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['DeleteZone']
-  def __init__(self, zonekey):
-    params = zonekey._params
+  def __init__(self, zoneid, objectid, feed):
+    params = { 'zoneid' : zoneid, 'feed' : feed, 'oid' : objectid }
     super(DeleteZoneRequest, self).__init__(params)
 
 
 class CreateFenceRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['CreateFence']
-  def __init__(self, fencekey, region, trigger, callback, from_feeds):
-    params = { 'trigger': trigger, }
-    params.update(fencekey._params)
+  def __init__(self, fenceid, region, trigger, callback, from_feeds):
+    params = { 'fenceid' : fenceid, 'trigger' : trigger }
     params.update(region._params)
     params.update(callback._params)
     if len(from_feeds) > 0:
@@ -219,41 +224,40 @@ class CreateFenceRequest(LocomatixRequest):
 
 class GetFenceRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['GetFence']
-  def __init__(self, fencekey):
-    params = fencekey._params
+  def __init__(self, fenceid):
+    params = { 'fenceid' : fenceid }
     super(GetFenceRequest, self).__init__(params)
 
 
 class ListFencesRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['ListFences']
   def __init__(self, start_key, fetch_size):
-    params = { 'startkey':start_key, 'fetchsize':fetch_size }
+    params = { 'startkey' : start_key, 'fetchsize' : fetch_size }
     super(ListFencesRequest, self).__init__(params)
 
 
 class DeleteFenceRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['DeleteFence']
-  def __init__(self, fencekey):
-    params = fencekey._params
+  def __init__(self, fenceid):
+    params = { 'fenceid' : fenceid, 'trigger' : trigger }
     super(DeleteFenceRequest, self).__init__(params)
 
 class GetLocationHistoryRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['GetLocationHistory']
-  def __init__(self, objectkey, start_time, end_time, start_key, fetch_size):
+  def __init__(self, objectid, feed, start_time, end_time, start_key, fetch_size):
     params = { 
+      'oid' : objectid, 'feed' : feed, \
       'starttime' : int(start_time), 'endtime' : int(end_time), \
       'startkey': start_key, 'fetchsize' : fetch_size
     }
-    params.update(objectkey._params)
     super(GetLocationHistoryRequest, self).__init__(params)
 
 class GetSpaceActivityRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['GetSpaceActivity']
-  def __init__(self, feedkey, region, start_time, end_time, start_key, fetch_size):
+  def __init__(self, feed, region, start_time, end_time, start_key, fetch_size):
     params = { 
-      'starttime' : int(start_time), 'endtime' : int(end_time), \
+      'feed' : feed, 'starttime' : int(start_time), 'endtime' : int(end_time), \
       'startkey': start_key, 'fetchsize' : fetch_size
     }
-    params.update(feedkey._params)
     params.update(region._params)
     super(GetSpaceActivityRequest, self).__init__(params)

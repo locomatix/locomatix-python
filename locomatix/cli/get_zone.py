@@ -24,8 +24,10 @@ def get_zone():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  zonekey = locomatix.ZoneKey(args['zoneid'], args['objectid'], args['feed'])
-  response = lxclient.get_zone(zonekey)
+  zoneid = args['zoneid']
+  objectid = args['objectid']
+  feed = args['feed']
+  response = lxclient.get_zone(zoneid, objectid, feed)
   
   if response.status != httplib.OK:
     print "error: getting zone (%s around %s in %s) - %s" % (args['zoneid'], 

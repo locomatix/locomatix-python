@@ -22,8 +22,8 @@ def delete_fence():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  fencekey = locomatix.FenceKey(args['fenceid'])
-  response = lxclient.delete_fence(fencekey)
+  fenceid = args['fenceid']
+  response = lxclient.delete_fence(fenceid)
   
   if response.status != httplib.OK:
     print "error: deleting fence %s - %s" % (args['fenceid'], response.message)

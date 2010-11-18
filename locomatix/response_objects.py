@@ -18,7 +18,8 @@ class PrintableAttributes(object):
 class LxObject(PrintableAttributes):
   """Represents a locomatix object."""
   def __init__(self):
-    self.objectkey = None
+    self.objectid = None
+    self.feed = None
     self.name_values = dict()
     self.location = None
 
@@ -33,7 +34,7 @@ class LxLocation(PrintableAttributes):
 class LxFence(PrintableAttributes):
   """Represents a locomatix fence."""
   def __init__(self):
-    self.fencekey = None
+    self.fenceid = None
     self.region = None
     self.trigger = None
     self.callback = None
@@ -43,7 +44,9 @@ class LxFence(PrintableAttributes):
 class LxZone(PrintableAttributes):
   """Represents a locomatix zone."""
   def __init__(self):
-    self.zonekey = None
+    self.zoneid = None
+    self.objectid = None
+    self.feed = None
     self.object_region = None
     self.trigger = None
     self.callback = None

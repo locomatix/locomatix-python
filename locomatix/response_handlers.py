@@ -81,13 +81,12 @@ class GetAttributesResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
     self.object = LxObject()
-    self.object.objectkey = ObjectKey(None, None)
     
   def afterEndElement(self, name):
     if name == 'Feed':
-      self.object.objectkey.feed = self.curr_text
+      self.object.feed = self.curr_text
     elif name == 'ObjectID':
-      self.object.objectkey.objectid = self.curr_text
+      self.object.objectid = self.curr_text
     elif name == 'Name':
       self.col_name = self.curr_text
     elif name == 'Value':
@@ -104,13 +103,12 @@ class ListObjectsResponseHandler(LxResponseHandler):
   def startElement(self, name, attrs):
     if name == 'Object':
       self.curr_object = LxObject()
-      self.curr_object.objectkey = ObjectKey(None, None)
     
   def afterEndElement(self, name):
     if name == 'Feed':
-      self.curr_object.objectkey.feed = self.curr_text
+      self.curr_object.feed = self.curr_text
     elif name == 'ObjectID':
-      self.curr_object.objectkey.objectid = self.curr_text
+      self.curr_object.objectid = self.curr_text
     elif name == 'NextKey':
       self.next_key = self.curr_text
     elif name == 'Name':
@@ -125,14 +123,13 @@ class GetLocationResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
     self.object = LxObject()
-    self.object.objectkey = ObjectKey(None, None)
     self.object.location = LxLocation()
   
   def afterEndElement(self, name):
     if name == 'Feed':
-      self.object.objectkey.feed = self.curr_text
+      self.object.feed = self.curr_text
     elif name == 'ObjectID':
-      self.object.objectkey.objectid = self.curr_text
+      self.object.objectid = self.curr_text
     elif name == 'Longitude':
       self.object.location.longitude = float(self.curr_text)
     elif name == 'Latitude':
@@ -155,15 +152,14 @@ class SearchResponseHandler(LxResponseHandler):
   def startElement(self, name, attrs):
     if name == 'Object':
       self.curr_object = LxObject()
-      self.curr_object.objectkey = ObjectKey(None, None)
     elif name == 'Location':
       self.curr_object.location = LxLocation()
   
   def afterEndElement(self, name):
     if name == 'ObjectID':
-      self.curr_object.objectkey.objectid = self.curr_text
+      self.curr_object.objectid = self.curr_text
     elif name == 'Feed':
-      self.curr_object.objectkey.feed = self.curr_text
+      self.curr_object.feed = self.curr_text
     elif name == 'Longitude':
       self.curr_object.location.longitude = float(self.curr_text)
     elif name == 'Latitude':
@@ -178,7 +174,6 @@ class GetZoneResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
     self.zone = LxZone()
-    self.zone.zonekey = ZoneKey(None, None, None)
     self.parent_name = None
 
     # private variables
@@ -194,7 +189,7 @@ class GetZoneResponseHandler(LxResponseHandler):
   
   def afterEndElement(self, name):
     if name == 'ZoneID':
-      self.zone.zonekey.zoneid = self.curr_text
+      self.zone.zoneid = self.curr_text
     elif name == 'RegionType':
       self._objectregion['type'] = self.curr_text
     elif name == 'Radius':
@@ -213,10 +208,10 @@ class GetZoneResponseHandler(LxResponseHandler):
       if self.parent_name == 'FromFeeds':
         self.zone.from_feeds.append(self.curr_text)
       elif self.parent_name == 'FollowObject':
-        self.zone.zonekey.feed = self.curr_text
+        self.zone.feed = self.curr_text
     elif name == 'ObjectID':
       if self.parent_name == 'FollowObject':
-        self.zone.zonekey.objectid = self.curr_text
+        self.zone.objectid = self.curr_text
     elif name == 'FromFeeds':
       self.zone.all_feeds = (self.curr_text.lower() == 'all')
 
@@ -236,7 +231,6 @@ class ListZonesResponseHandler(LxResponseHandler):
   def startElement(self, name, attrs):
     if name == 'Zone':
       self.curr_zone = LxZone()
-      self.curr_zone.zonekey = ZoneKey(None, None, None)
     elif name == 'FromFeeds':
       self.parent_name = name
     elif name == 'FollowObject':
@@ -248,7 +242,7 @@ class ListZonesResponseHandler(LxResponseHandler):
     
   def afterEndElement(self, name):
     if name == 'ZoneID':
-      self.curr_zone.zonekey.zoneid = self.curr_text
+      self.curr_zone.zoneid = self.curr_text
     elif name == 'RegionType':
       self._objectregion['type'] = self.curr_text
     elif name == 'Radius':
@@ -267,10 +261,10 @@ class ListZonesResponseHandler(LxResponseHandler):
       if self.parent_name == 'FromFeeds':
         self.curr_zone.from_feeds.append(self.curr_text)
       elif self.parent_name == 'FollowObject':
-        self.curr_zone.zonekey.feed = self.curr_text
+        self.curr_zone.feed = self.curr_text
     elif name == 'ObjectID':
       if self.parent_name == 'FollowObject':
-        self.curr_zone.zonekey.objectid = self.curr_text
+        self.curr_zone.objectid = self.curr_text
     elif name == 'FromFeeds':
       self.curr_zone.all_feeds = (self.curr_text.lower() == 'all')
     elif name == 'NextKey':
@@ -283,7 +277,6 @@ class GetFenceResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
     self.fence = LxFence()
-    self.fence.fencekey = FenceKey(None)
 
     # private variables
     self._region = dict()
@@ -291,7 +284,7 @@ class GetFenceResponseHandler(LxResponseHandler):
   
   def afterEndElement(self, name):
     if name == 'FenceID':
-      self.fence.fencekey.fenceid = self.curr_text
+      self.fence.fenceid = self.curr_text
     if name == 'RegionType':
       self._region['type'] = self.curr_text
     elif name == 'Longitude':
@@ -330,7 +323,6 @@ class ListFencesResponseHandler(LxResponseHandler):
   def startElement(self, name, attrs):
     if name == 'Fence':
       self.curr_fence = LxFence()
-      self.curr_fence.fencekey = FenceKey(None)
     elif name == 'Callback':
       self._callback = dict()
     elif name == 'Region':
@@ -338,7 +330,7 @@ class ListFencesResponseHandler(LxResponseHandler):
     
   def afterEndElement(self, name):
     if name == 'FenceID':
-      self.curr_fence.fencekey.fenceid = self.curr_text
+      self.curr_fence.fenceid = self.curr_text
     elif name == 'RegionType':
       self._region['type'] = self.curr_text
     elif name == 'Longitude':
@@ -403,7 +395,6 @@ class GetSpaceActivityResponseHandler(LxResponseHandler):
   def startElement(self, name, attrs):
     if name == 'Location':
       self.curr_object = LxObject()
-      self.curr_object.objectkey = ObjectKey(None, None)
       self.curr_object.location = LxLocation()
 
   def afterEndElement(self, name):
