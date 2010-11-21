@@ -24,4 +24,5 @@ from region import *
 from object_region import *
 from callback import *
 from keys import *
+from response_objects import *
 from defaults import *
