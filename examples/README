@@ -1,0 +1,6 @@
+This directory contains several example programs that illustrate 
+how to use the Locomatix Cloud.
+
+SpeedAlerts - This example implements a speed alert system that
+              notifies approaching cars about the speed traps
+              ahead.

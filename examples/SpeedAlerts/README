@@ -1,0 +1,64 @@
+This sample program implements a speed alert system that
+notifies about the upcoming speed traps when they are in
+within 500 meters of your car.
+
+It loads the data about the speed traps, simulates two cars
+moving on the road continuously updating the location and 
+receiving alerts about the speed traps. 
+
+The data model for consists of a feed called 'speedtraps' 
+that stores the attributes of each speed trap and its 
+location. Each speedtrap is identified using a unique key.
+
+./speedtraps.data  - This file consists of data about each speedtrap. 
+                     It consists of a unique id, the latitude, 
+                     longitude of the speed trap, the nature of the 
+                     speed trap and a comment. 
+
+./load.py          - This script allows you to load the speed trap 
+                     data into the Locomatix cloud in feed called 
+                     'speedtraps'.
+
+./movement.data    - This file is used to simulate the locations of 
+                     moving cars. It consists of a series of latitude 
+                     and longitude. 
+
+./cars.py          - This script simulates two cars moving in space by 
+                     reading every second the latitude and longitude in 
+                     'movement.data' file. 
+
+./alerts.py        - This script creates a local web server used to 
+                     receive alerts. 
+
+RUNNING THE SAMPLE 
+------------------
+
+a) Get your Locomatix credentials by signing at the website 
+   http://www.locomatix.com.
+
+b) If you already have Locomatix credentials, add those credentials 
+   in the scripts ./load.py and ./cars.py by substituting the following 
+   variables 
+
+    LOCOMATIX_CUSTID
+    LOCOMATIX_KEY
+    LOCOMATIX_SECRET_KEY
+
+c) Run ./load.py to load the data about the locations of speed traps.
+
+d) Now run ./alerts.py and it will spit out an URL. Make sure that this 
+   URL is public and reachable. If you are running inside a wirewall or 
+   behind a NAT, alerts will not be posted to this URL.
+
+e) In a seperate terminal window, run ./cars.py -u <URL>. The URL from 
+   step d) should be passed as a parameter. This specifies to the 
+   Locomatix cloud that alerts should be posted to the URL.
+ 
+   Once the program starts running, it will print the movement of cars 
+   and as they come across speed traps, alerts will be posted to the URL.
+   You can see the alerts being printed by ./alerts.py.
+   
+QUESTIONS
+---------
+
+If you have any questions, send an e-mail to info@locomatix.com.

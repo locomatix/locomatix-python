@@ -18,6 +18,10 @@ Sign up for an API Key today here[http://www.locomatix.com/signup], it's free!
 
 More detailed documentation is available here[http://www.locomatix.com/docs/0.9/overview].
 
+= Examples
+
+Some examples of how you can use Locomatix cloud can found in the directory examples/
+
 = Command Line Utility
 
 A convenient command line utility is provided with locomatix-python that you can use to get started with the package.  To see a list of subcommands available just run:
