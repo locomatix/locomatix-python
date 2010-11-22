@@ -209,13 +209,22 @@ if __name__ == "__main__" :
     usage(sys.argv[0])
     sys.exit(1)
 
+  # Now create a car instance called 'carA'
   carA = Car('car-a', 'Cab A', '2992992', 500, url)
+
+  # Now create a car instance called 'carB'
   carB = Car('car-b', 'Cab B', '8388288', 500, url)
 
+  # Start moving the car 'carA' 
   carA.start()
+
+  # Start moving the car 'carB' 
   carB.start()
 
+  # Wait until the car 'carB' is complete
   carB.join()
+
+  # Wait until the car 'carA' is complete
   carA.join()
    
   sys.exit(0)
