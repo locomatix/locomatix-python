@@ -63,18 +63,18 @@ class Car(Thread):
     self.zoneid = self.carid + '-zone'
 
     # Create an object region of given radius
-    region = locomatix.CircleObjectRegion(radius)
+    region = locomatix.Circle(radius)
 
     # Create an URL callback 
     callback = locomatix.URLCallback(callback_url)
 
     # Indicate that only speed traps are to be monitored in the cars zone
-    from_feeds = [FEED_SPEEDTRAPS]
+    from_feed = FEED_SPEEDTRAPS
 
     # Create a zone around the car in the Locomatix cloud and inform that alert 
     # is to be generated when a speed trap enters the zone
     response = self.conn.create_zone(self.zoneid, self.carid, 
-                                FEED_CARS, region, 'Ingress', callback, from_feeds)
+                                FEED_CARS, region, 'Ingress', callback, from_feed)
 
     # Make sure that we have created the zone around object successfully
     if response.status != httplib.OK:
@@ -88,7 +88,8 @@ class Car(Thread):
   def move(self, longitude, latitude):
    
     # Update the location of the car in the locomatix cloud
-    response = self.conn.update_location(self.carid, FEED_CARS, longitude, latitude, time.time())
+    location = locomatix.Point(latitude, longitude)
+    response = self.conn.update_location(self.carid, FEED_CARS, location, time.time())
 
     # Make sure that we have updated the car location successfully
     if response.status != httplib.OK:
@@ -101,7 +102,7 @@ class Car(Thread):
   #################################################################################
   def setUp(self):
 
-    # First create a connection to Locomatix cloud with the credentials
+    # First create Locomatix Client with the credentials
     self.conn = locomatix.Client(LOCOMATIX_CUSTID, 
                                  LOCOMATIX_KEY,
                                  LOCOMATIX_SECRET_KEY)

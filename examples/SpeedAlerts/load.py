@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import httplib
 import time
 import locomatix
 
@@ -14,7 +15,7 @@ class SpeedTraps(object):
 
   def setUp(self):
 
-    # First create a connection to Locomatix cloud with the credentials
+    # First create a Locomatix client with the credentials
     self.conn = locomatix.Client(LOCOMATIX_CUSTID,
                                  LOCOMATIX_KEY,
                                  LOCOMATIX_SECRET_KEY)
@@ -48,8 +49,13 @@ class SpeedTraps(object):
         'City' : data[5], 'State' : data[6], 'Comments' : data[7]
       }
 
-      response = self.conn.create_object(id, FEED_SPEEDTRAPS, nvpairs);
-      response = self.conn.update_location(id, FEED_SPEEDTRAPS, longitude, latitude, time.time());
+      location = locomatix.Point(latitude, longitude)
+      response = self.conn.create_object(id, FEED_SPEEDTRAPS, nvpairs, location, time.time());
+
+      # Make sure that we have created the object successfully
+      if response.status != httplib.OK:
+        print 'unable to create object %s in feed %s - %s' % \
+          (id, FEED_SPEEDTRAPS, response.message)
 
 if __name__ == '__main__':
 
