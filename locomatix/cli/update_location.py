@@ -1,8 +1,25 @@
 #!/usr/bin/env python
-
+###############################################################################
+#
+# Copyright 2010 Locomatix, Inc.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+###############################################################################
 import sys
 import httplib
 import locomatix
+from _utils import *
 
 def update_location():
   """docstring for update_location"""
@@ -10,9 +27,10 @@ def update_location():
   parser.add_description("Update the location of an object")
   parser.add_arg('objectid', 'Object to be updated')
   parser.add_roption('feed',  'f:', 'feed=', 'Name of the feed')
-  parser.add_roption('long',   'g:', 'long=', 'Longitude of the location')
   parser.add_roption('lat',   'l:', 'lat=', 'Latitude of the location')
+  parser.add_roption('long',  'g:', 'long=', 'Longitude of the location')
   parser.add_roption('time',  't:', 'time=', 'Latitude of the location')
+  parser.add_option('ttl',    'u:', 'ttl=', 'TTL - Time validity of the location')
   parser.add_option('nvpairs','v:', 'nv=',  'Name-value pairs (specified as name=value)', True)
   args = parser.parse_args(sys.argv)
   
@@ -21,19 +39,22 @@ def update_location():
   time       = long(args['time'])
   objectid   = args['objectid']
   feedid     = args['feed']
+  ttl        = 0
   nvpairs    = dict()
   
-  for anv in args['nvpairs']:
+  for nv in args['nvpairs']:
     nv = anv.split('=')
     nvpairs[nv[0].strip()] = nv[1].strip()
   
+  if 'ttl' in args:
+    ttl = long(args['ttl'])
+
   try:
     lxclient = locomatix.Client(args['custid'], \
                              args['key'], \
                              args['secret-key'], \
                              args['host'], \
-                             args['port'], \
-                             args['use-ssl'])
+                             args['port'])
   except:
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
@@ -41,14 +62,15 @@ def update_location():
   objectid = args['objectid']
   feed = args['feed']
 
-  response = lxclient.update_location(objectid, feed, longitude, latitude, time, nvpairs)
+  location = locomatix.Point(latitude, longitude) 
+  response = lxclient.update_location(objectid, feed, location, time, nvpairs, ttl)
   
   if response.status != httplib.OK:
-    print "error: updating location for object (%s in %s) - %s" % (args['objectid'], \
-         args['feed'], response.message)
+    dprint(args, response, "error: updating location for object (%s in %s) - %s" % \
+                            (args['objectid'], args['feed'], response.message))
     sys.exit(1)
-  
-  print "Successfully updated location of object: %s" % objectid
+
+  dprint(args, response, "Successfully updated location of object: %s" % objectid)
 
 
 if __name__ == '__main__':

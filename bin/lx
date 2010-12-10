@@ -21,6 +21,7 @@ class Subcommand():
     self.method = method
 
 SUBCOMMANDS = [
+  Subcommand('list-feeds',           'ls',  cli.list_feeds),
   Subcommand('create-object',        'co',  cli.create_object),
   Subcommand('delete-object',        'do',  cli.delete_object),
   Subcommand('list-objects',         'lo',  cli.list_objects),

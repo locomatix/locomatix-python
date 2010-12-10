@@ -16,108 +16,107 @@
 #
 ###############################################################################
 import urllib
-import xml.sax
 from response_objects import *
 from region import *
-from object_region import *
 from callback import *
 from keys import *
 
-class LxResponseHandler(xml.sax.ContentHandler):
-  """All the Response handlers derive from this."""
+class LxResponseHandler(object):
   def __init__(self):
     self.message = ''
-    self.curr_text = ''
-    self.col_name = ''
-  
-  def startElement(self, name, attrs):
-    pass
-  
-  def endElement(self, name):
-    """The default endElement handler.
-    
-    This handler catches the status tag (all responses have a status tag). If it's not the
-    status tag then it converts the curr_text to ascii, unescapes it, and delegates handling 
-    to the afterEndElement hook.  Derived class should do their end element handling in this
-    hook.  Once the hook completes, it resets the curr_text for the next segment."""
-    if name == 'Status':
-      self.message = self.curr_text
-    else:
-      self.afterEndElement(name)
-    self.curr_text = ''
-  
-  def afterEndElement(self, name):
-    """derived handlers should call this for their end element hook."""
-    pass
-  
-  def characters(self, content):
-    self.curr_text += content
 
-  def createCallback(self, params):
-    callbacktype = params['type'] 
-    if callbacktype == 'URL':
+  def handle(self, data):
+    self.message = data['Status']
+
+  def createCallback(self, type, params): 
+    if type == 'URL':
       return URLCallback(params['URL'])
     return None
 
-  def createRegion(self, params):
-    regiontype = params['type'] 
-    if regiontype == 'Circle':
-      return CircleRegion(params['longitude'], params['latitude'], \
-                              params['radius'])
+  def createRegion(self, type, params): 
+    if type == 'Circle':
+      return Circle(params['Latitude'], params['Longitude'], \
+                              params['Radius'])
     return None
 
-  def createObjectRegion(self, params):
-    regiontype = params['type'] 
-    if regiontype == 'Circle':
-      return CircleObjectRegion(params['radius'])
+  def createObjectRegion(self, type, params): 
+    if type == 'Circle':
+      return Circle(params['Radius'])
     return None
+
+  def createZone(self, rzone):
+    zone = LxZone() 
+    region = rzone['Region']
+    callback = rzone['Callback']
+    follow_object = rzone['FollowObject']
+
+    zone.zoneid = rzone['ZoneID']
+    zone.region = self.createObjectRegion(region['RegionType'], \
+                                                 region['RegionParams'])
+    zone.callback = self.createCallback(callback['CallbackType'], \
+                                        {'URL': callback['CallbackURL']})
+    zone.trigger = rzone['Trigger']
+    zone.from_feed = rzone['FromFeed']
+    zone.feed = follow_object['Feed']
+    zone.objectid = follow_object['ObjectID']
+    return zone
+
+  def createFence(self, rfence):
+    fence = LxFence()
+    region = rfence['Region']
+    callback = rfence['Callback']
+
+    fence.fenceid = rfence['FenceID']
+    fence.region = self.createRegion(region['RegionType'], \
+                                     region['RegionParams'])
+    fence.callback = self.createCallback(callback['CallbackType'], \
+                                        {'URL': callback['CallbackURL']})
+    fence.trigger = rfence['Trigger']
+    fence.from_feed = rfence['FromFeed']
+    return fence
 
 class StatusResponseHandler(LxResponseHandler):
   """Behaves exactly as the base response handler."""
   pass
 
+class ListFeedsResponseHandler(LxResponseHandler):
+  def __init__(self):
+    LxResponseHandler.__init__(self)
+    self.fences = []
+    self.next_key = None
 
+  def handle(self, data):
+    super(ListFeedsResponseHandler, self).handle(data)
+    self.next_key = data['Result'].get('NextKey')
+    self.feeds = data['Result']['Feeds']
+    
 class GetAttributesResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
     self.object = LxObject()
     
-  def afterEndElement(self, name):
-    if name == 'Feed':
-      self.object.feed = self.curr_text
-    elif name == 'ObjectID':
-      self.object.objectid = self.curr_text
-    elif name == 'Name':
-      self.col_name = self.curr_text
-    elif name == 'Value':
-      self.object.name_values[self.col_name] = self.curr_text
-
+  def handle(self, data):
+    super(GetAttributesResponseHandler, self).handle(data)
+    object = data['Result']['Object']
+    self.object.feed = object['Feed']
+    self.object.objectid = object['ObjectID']
+    self.object.name_values = object.get('NameValues',{})
 
 class ListObjectsResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
-    self.curr_object = None
     self.objects = []
     self.next_key = None
-    
-  def startElement(self, name, attrs):
-    if name == 'Object':
-      self.curr_object = LxObject()
-    
-  def afterEndElement(self, name):
-    if name == 'Feed':
-      self.curr_object.feed = self.curr_text
-    elif name == 'ObjectID':
-      self.curr_object.objectid = self.curr_text
-    elif name == 'NextKey':
-      self.next_key = self.curr_text
-    elif name == 'Name':
-      self.col_name = self.curr_text
-    elif name == 'Value':
-      self.curr_object.name_values[self.col_name] = self.curr_text
-    elif name == 'Object':
-      self.objects.append(self.curr_object)
 
+  def handle(self, data):
+    super(ListObjectsResponseHandler, self).handle(data)
+    self.next_key = data['Result'].get('NextKey')
+    for robject in data['Result']['Objects']:
+      object = LxObject()
+      object.feed = robject['Feed']
+      object.objectid = robject['ObjectID']
+      object.name_values = robject.get('NameValues', {})
+      self.objects.append(object)
 
 class GetLocationResponseHandler(LxResponseHandler):
   def __init__(self):
@@ -125,297 +124,110 @@ class GetLocationResponseHandler(LxResponseHandler):
     self.object = LxObject()
     self.object.location = LxLocation()
   
-  def afterEndElement(self, name):
-    if name == 'Feed':
-      self.object.feed = self.curr_text
-    elif name == 'ObjectID':
-      self.object.objectid = self.curr_text
-    elif name == 'Longitude':
-      self.object.location.longitude = float(self.curr_text)
-    elif name == 'Latitude':
-      self.object.location.latitude = float(self.curr_text)
-    elif name == 'Time':
-      self.object.location.time = int(self.curr_text)
-    elif name == 'Name':
-      self.col_name = self.curr_text
-    elif name == 'Value':
-      self.object.location.name_values[self.col_name] = self.curr_text
-
+  def handle(self, data):
+    super(GetLocationResponseHandler, self).handle(data)
+    location = data['Result']['Location']
+    self.object.feed = location['Feed']
+    self.object.objectid = location['ObjectID']
+    self.object.location.longitude = float(location['Longitude'])
+    self.object.location.latitude = float(location['Latitude'])
+    self.object.location.time = int(location['Time'])
+    self.object.location.name_values = location.get('NameValues', {})
 
 class SearchResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
-    self.curr_object = None
     self.objects = []
     self.next_key = None
-  
-  def startElement(self, name, attrs):
-    if name == 'Object':
-      self.curr_object = LxObject()
-    elif name == 'Location':
-      self.curr_object.location = LxLocation()
-  
-  def afterEndElement(self, name):
-    if name == 'ObjectID':
-      self.curr_object.objectid = self.curr_text
-    elif name == 'Feed':
-      self.curr_object.feed = self.curr_text
-    elif name == 'Longitude':
-      self.curr_object.location.longitude = float(self.curr_text)
-    elif name == 'Latitude':
-      self.curr_object.location.latitude = float(self.curr_text)
-    elif name == 'Object':
-      self.objects.append(self.curr_object)
-    elif name == 'NextKey':
-      self.next_key = self.curr_text
 
+  def handle(self, data):
+    super(SearchResponseHandler, self).handle(data)
+    self.next_key = data['Result'].get('NextKey')
+    for robject in data['Result']['Objects']:
+      object = LxObject()
+      object.location = LxLocation()
+      object.feed = robject['Feed']
+      object.objectid = robject['ObjectID']
+      rloc = robject['Location']
+      object.location.longitude = rloc['Longitude']
+      object.location.latitude = rloc['Latitude']
+      self.objects.append(object)
 
 class GetZoneResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
-    self.zone = LxZone()
-    self.parent_name = None
+    self.zone = None
 
-    # private variables
-    self._objectregion = dict()
-    self._callback = dict()
+  def handle(self, data):
+    super(GetZoneResponseHandler, self).handle(data)
+    self.zone = self.createZone(data['Result']['Zone'])
   
-  def startElement(self, name, attrs):
-    """docstring for startElement"""
-    if name == 'FromFeeds':
-      self.parent_name = name
-    elif name == 'FollowObject':
-      self.parent_name = name
-  
-  def afterEndElement(self, name):
-    if name == 'ZoneID':
-      self.zone.zoneid = self.curr_text
-    elif name == 'RegionType':
-      self._objectregion['type'] = self.curr_text
-    elif name == 'Radius':
-      self._objectregion['radius'] = float(self.curr_text)
-    elif name == 'Region':
-      self.zone.object_region = self.createObjectRegion(self._objectregion)
-    elif name == 'Trigger':
-      self.zone.trigger = self.curr_text
-    elif name == 'CallbackURL':
-      self._callback['URL'] = self.curr_text
-    elif name == 'CallbackType':
-      self._callback['type'] = self.curr_text
-    elif name == 'Callback':
-      self.zone.callback = self.createCallback(self._callback)
-    elif name == 'Feed':
-      if self.parent_name == 'FromFeeds':
-        self.zone.from_feeds.append(self.curr_text)
-      elif self.parent_name == 'FollowObject':
-        self.zone.feed = self.curr_text
-    elif name == 'ObjectID':
-      if self.parent_name == 'FollowObject':
-        self.zone.objectid = self.curr_text
-    elif name == 'FromFeeds':
-      self.zone.all_feeds = (self.curr_text.lower() == 'all')
-
-
 class ListZonesResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
     self.zones = []
-    self.curr_zone = None
-    self.parent_name = None
     self.next_key = None
 
-    # private variables
-    self._callback = dict()
-    self._objectregion = dict()
-    
-  def startElement(self, name, attrs):
-    if name == 'Zone':
-      self.curr_zone = LxZone()
-    elif name == 'FromFeeds':
-      self.parent_name = name
-    elif name == 'FollowObject':
-      self.parent_name = name
-    elif name == 'Callback':
-      self._callback = dict()
-    elif name == 'Region':
-      self._objectregion = dict()
-    
-  def afterEndElement(self, name):
-    if name == 'ZoneID':
-      self.curr_zone.zoneid = self.curr_text
-    elif name == 'RegionType':
-      self._objectregion['type'] = self.curr_text
-    elif name == 'Radius':
-      self._objectregion['radius'] = float(self.curr_text)
-    elif name == 'Region':
-      self.curr_zone.object_region = self.createObjectRegion(self._objectregion)
-    elif name == 'Trigger':
-      self.curr_zone.trigger = self.curr_text
-    elif name == 'CallbackURL':
-      self._callback['URL'] = self.curr_text
-    elif name == 'CallbackType':
-      self._callback['type'] = self.curr_text
-    elif name == 'Callback':
-      self.curr_zone.callback = self.createCallback(self._callback)
-    elif name == 'Feed':
-      if self.parent_name == 'FromFeeds':
-        self.curr_zone.from_feeds.append(self.curr_text)
-      elif self.parent_name == 'FollowObject':
-        self.curr_zone.feed = self.curr_text
-    elif name == 'ObjectID':
-      if self.parent_name == 'FollowObject':
-        self.curr_zone.objectid = self.curr_text
-    elif name == 'FromFeeds':
-      self.curr_zone.all_feeds = (self.curr_text.lower() == 'all')
-    elif name == 'NextKey':
-      self.next_key = self.curr_text
-    elif name == 'Zone':
-      self.zones.append(self.curr_zone)
-
+  def handle(self, data):
+    super(ListZonesResponseHandler, self).handle(data)
+    self.next_key = data['Result'].get('NextKey')
+    self.zones = [self.createZone(zone) for zone in data['Result']['Zones']]
 
 class GetFenceResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
     self.fence = LxFence()
 
-    # private variables
-    self._region = dict()
-    self._callback = dict()
+  def handle(self, data):
+    super(GetFenceResponseHandler, self).handle(data)
+    self.fence = self.createFence(data['Result']['Fence'])
   
-  def afterEndElement(self, name):
-    if name == 'FenceID':
-      self.fence.fenceid = self.curr_text
-    if name == 'RegionType':
-      self._region['type'] = self.curr_text
-    elif name == 'Longitude':
-      self._region['longitude'] = float(self.curr_text)
-    elif name == 'Latitude':
-      self._region['latitude'] = float(self.curr_text)
-    elif name == 'Radius':
-      self._region['radius'] = float(self.curr_text)
-    elif name == 'Region':
-      self.fence.region = self.createRegion(self._region)
-    elif name == 'Trigger':
-      self.fence.trigger = self.curr_text
-    elif name == 'CallbackURL':
-      self._callback['URL'] = self.curr_text
-    elif name == 'CallbackType':
-      self._callback['type'] = self.curr_text
-    elif name == 'Callback':
-      self.fence.callback = self.createCallback(self._callback)
-    elif name == 'Feed':
-      self.fence.from_feeds.append(self.curr_text)
-    elif name == 'FromFeeds':
-      self.fence.all_feeds = (self.curr_text.lower() == 'all')
-
-
 class ListFencesResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
     self.fences = []
-    self.curr_fence = None
     self.next_key = None
 
-    # private variables
-    self._callback = dict()
-    self._region = dict()
+  def handle(self, data):
+    super(ListFencesResponseHandler, self).handle(data)
+    self.next_key = data['Result'].get('NextKey')
+    self.fences = [self.createFence(fence) for fence in data['Result']['Fences']]
     
-  def startElement(self, name, attrs):
-    if name == 'Fence':
-      self.curr_fence = LxFence()
-    elif name == 'Callback':
-      self._callback = dict()
-    elif name == 'Region':
-      self._region = dict()
-    
-  def afterEndElement(self, name):
-    if name == 'FenceID':
-      self.curr_fence.fenceid = self.curr_text
-    elif name == 'RegionType':
-      self._region['type'] = self.curr_text
-    elif name == 'Longitude':
-      self._region['longitude'] = float(self.curr_text)
-    elif name == 'Latitude':
-      self._region['latitude'] = float(self.curr_text)
-    elif name == 'Radius':
-      self._region['radius'] = float(self.curr_text)
-    elif name == 'Region':
-      self.curr_fence.region = self.createRegion(self._region)
-    elif name == 'Trigger':
-      self.curr_fence.trigger = self.curr_text
-    elif name == 'CallbackURL':
-      self._callback['URL'] = self.curr_text
-    elif name == 'CallbackType':
-      self._callback['type'] = self.curr_text
-    elif name == 'Callback':
-      self.curr_fence.callback = self.createCallback(self._callback)
-    elif name == 'Feed':
-      self.curr_fence.from_feeds.append(self.curr_text)
-    elif name == 'FromFeeds':
-      self.curr_fence.all_feeds = (self.curr_text.lower() == 'all')
-    elif name == 'NextKey':
-      self.next_key = self.curr_text
-    elif name == 'Fence':
-      self.fences.append(self.curr_fence)
-
 class GetLocationHistoryResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
     self.locations = []
-    self.curr_location = None
     self.next_key = None
-    
-  def startElement(self, name, attrs):
-    if name == 'Location':
-      self.curr_location = LxLocation()
-    
-  def afterEndElement(self, name):
-    if name == 'Longitude':
-      self.curr_location.longitude = float(self.curr_text)
-    elif name == 'Latitude':
-      self.curr_location.latitude = float(self.curr_text)
-    elif name == 'Time':
-      self.curr_location.time = int(self.curr_text)
-    elif name == 'Name':
-      self.col_name = self.curr_text
-    elif name == 'Value':
-      self.curr_location.name_values[self.col_name] = self.curr_text
-    elif name == 'NextKey':
-      self.next_key = self.curr_text
-    elif name == 'Location':
-      self.locations.append(self.curr_location)
 
+  def handle(self, data):
+    super(GetLocationHistoryResponseHandler, self).handle(data)
+    self.next_key = data['Result'].get('NextKey')
+    for rlocation in data['Result']['Trail']:
+      location = LxLocation()
+      location.longitude = float(rlocation['Longitude'])
+      location.latitude = float(rlocation['Latitude'])
+      location.time = int(rlocation['Time'])
+      location.name_values = rlocation.get('NameValues', {})
+      self.locations.append(location)
+    
 class GetSpaceActivityResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
     self.objects = []
-    self.curr_object = None
     self.next_key = None
-  
-  def startElement(self, name, attrs):
-    if name == 'Location':
-      self.curr_object = LxObject()
-      self.curr_object.location = LxLocation()
 
-  def afterEndElement(self, name):
-    if name == 'Feed':
-      self.curr_object.feed = self.curr_text
-    elif name == 'ObjectID':
-      self.curr_object.objectid = self.curr_text
-    elif name == 'Longitude':
-      self.curr_object.location.longitude = float(self.curr_text)
-    elif name == 'Longitude':
-      self.curr_object.location.longitude = float(self.curr_text)
-    elif name == 'Latitude':
-      self.curr_object.location.latitude = float(self.curr_text)
-    elif name == 'Time':
-      self.curr_object.location.time = int(self.curr_text)
-    elif name == 'Name':
-      self.col_name = self.curr_text
-    elif name == 'Value':
-      self.curr_object.location.name_values[self.col_name] = self.curr_text
-    elif name == 'NextKey':
-      self.next_key = self.curr_text
-    elif name == 'Location':
-      self.objects.append(self.curr_object)
+  def handle(self, data):
+    super(GetSpaceActivityResponseHandler, self).handle(data)
+    self.next_key = data['Result'].get('NextKey')
+    for robject in data['Result']['Activity']:
+      object = LxObject()
+      object.location = LxLocation()
+      object.feed = robject['Feed']
+      object.objectid = robject['ObjectID']
+      object.location.longitude = float(robject['Longitude'])
+      object.location.latitude = float(robject['Latitude'])
+      object.location.time = int(robject['Time'])
+      object.location.name_values = robject.get('NameValues', {})
+      self.objects.append(object)
+
 

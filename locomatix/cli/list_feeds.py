@@ -21,13 +21,10 @@ import httplib
 import locomatix
 from _utils import *
 
-def list_zones():
-  """docstring for list_zones"""
-
+def list_feeds():
+  """docstring for list_feeds"""
   parser = locomatix.ArgsParser()
-  parser.add_description("Gets the details of all zones attached to object")
-  parser.add_roption('feed','f:', 'feed=', 'Name of the feed')
-  parser.add_arg('objectid','Object attached to the zones')
+  parser.add_description("Gets the details of all feeds")
   args = parser.parse_args(sys.argv)
   
   try:
@@ -40,15 +37,13 @@ def list_zones():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  objectid = args['objectid']
-  feed = args['feed']
-  for batch in lxclient._list_zones_iterator(objectid, feed, allow_error=True):
+  for batch in lxclient._list_feeds_iterator(allow_error=True):
     if batch.status > httplib.OK:
-      dprint(args, batch, "error: failed to retrieve zone list for (%s in %s) - %s" % (objectid, feed, batch.message))
+      dprint(args, batch, "error: failed to retrieve feed list - %s" % (batch.message))
       continue
 
-    dprint(args, batch, '\n'.join('%s' % zone for zone in batch.zones))
+    dprint(args, batch, '\n'.join('%s' % feed for feed in batch.feeds))
 
 
 if __name__ == '__main__':
-  list_zones()
+  list_feeds()

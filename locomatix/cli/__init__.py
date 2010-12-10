@@ -1,4 +1,23 @@
-__all__ = ['create_object','delete_object','list_objects', \
+###############################################################################
+#
+# Copyright 2010 Locomatix, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+###############################################################################
+
+__all__ = ['list_feeds', 
+           'create_object','delete_object','list_objects', \
            'update_attributes','get_attributes', \
            'update_location','get_location', \
            'create_zone','get_zone','delete_zone','list_zones', \
@@ -6,6 +25,7 @@ __all__ = ['create_object','delete_object','list_objects', \
            'get_location_history', 'get_space_activity'
 ]
 
+from list_feeds import list_feeds
 from create_object import create_object
 from delete_object import delete_object
 from list_objects import list_objects

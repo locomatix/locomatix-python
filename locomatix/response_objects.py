@@ -39,7 +39,7 @@ class LxFence(PrintableAttributes):
     self.trigger = None
     self.callback = None
     self.all_feeds = False
-    self.from_feeds = []
+    self.from_feed = None
 
 class LxZone(PrintableAttributes):
   """Represents a locomatix zone."""
@@ -47,8 +47,8 @@ class LxZone(PrintableAttributes):
     self.zoneid = None
     self.objectid = None
     self.feed = None
-    self.object_region = None
+    self.region = None
     self.trigger = None
     self.callback = None
     self.all_feeds = False
-    self.from_feeds = []
+    self.from_feed = None

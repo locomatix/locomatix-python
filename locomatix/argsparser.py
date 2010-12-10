@@ -19,15 +19,17 @@ class ArgsParser:
 
           self.args = dict()
 
-          self.args['use-ssl'] = True
           self.args['host'] = DEFAULT_LOCOMATIX_HOST
-          self.args['port'] = DEFAULT_LOCOMATIX_PORTS[self.args['use-ssl']]
+          self.args['port'] = DEFAULT_LOCOMATIX_PORT
+
+          self.args['raw'] = False
 
           # Add the standard set of options
           self.add_roption('custid',     'c:', 'custid=',    'Customer ID for authentication')
           self.add_roption('key',        'k:', 'key=',       'Key for authentication')
           self.add_roption('secret-key', 's:', 'secret-key=','Secret key for authentication')
           self.add_option('help',       'h',  'help',       'Print help message')
+          self.add_option('raw',        'd', 'raw',        'Print raw response', type='bool')
 
           # Read the credentials from the locomatix startup file, if it exists
           myhome = os.path.expanduser('~')
@@ -53,25 +55,26 @@ class ArgsParser:
                      self.args['host'] = about[2]
                   elif about[0] == 'port':
                      self.args['port'] = int(about[2])
-                  elif about[0] == 'use_ssl':
+                  elif about[0] == 'raw':
                      option = about[2].lower()
-                     self.args['use-ssl'] = True if option in ('yes','true') else False
+                     self.args['raw'] = True if option in ('yes','true') else False
+
               handle.close()
 
-      def add_option(self, option, sopt, lopt, help, multiple=False):
+      def add_option(self, option, sopt, lopt, help, multiple=False, type='str'):
           hsopt = '' if sopt == '' else '-' + sopt.split(':')[0]
           hlopt = '' if lopt == '' else '--' + lopt.split('=')[0]
 
           self.oargs.append(option)
-          self.opts[option] = [ sopt, hsopt, lopt, hlopt, help, multiple]
+          self.opts[option] = [ sopt, hsopt, lopt, hlopt, help, multiple, type]
           self.args[option] = [] if multiple else ''
 
-      def add_roption(self, option, sopt, lopt, help, multiple=False):
+      def add_roption(self, option, sopt, lopt, help, multiple=False, type='str'):
           hsopt = '' if sopt == '' else '-' + sopt.split(':')[0]
           hlopt = '' if lopt == '' else '--' + lopt.split('=')[0]
 
           self.rargs.append(option)
-          self.ropts[option] = [ sopt, hsopt, lopt, hlopt, help, multiple ]
+          self.ropts[option] = [ sopt, hsopt, lopt, hlopt, help, multiple, type]
           self.args[option] = [] if multiple else ''
 
       def add_arg(self, arg, help):
@@ -94,18 +97,22 @@ class ArgsParser:
               opts, args = getopt.gnu_getopt(sysargs[1:], all_sopts, all_lopts) 
               for o, a in opts:
                   for i in range(len(self.oargs)):
-                      if o in (self.opts[self.oargs[i]][1], self.opts[self.oargs[i]][3]): 
-                         if self.opts[self.oargs[i]][5]:
-                            opargs[self.oargs[i]].append(a)
-                         else:
-                            opargs[self.oargs[i]] = a
+                      if o in (self.opts[self.oargs[i]][1], self.opts[self.oargs[i]][3]):
+                          if self.opts[self.oargs[i]][6] == 'bool':
+                              a = True if a.lower() in ('yes','true', '') else False
+                          if self.opts[self.oargs[i]][5]:
+                              opargs[self.oargs[i]].append(a)
+                          else:
+                              opargs[self.oargs[i]] = a
 
                   for i in range(len(self.rargs)):
                       if o in (self.ropts[self.rargs[i]][1], self.ropts[self.rargs[i]][3]):  
-                         if self.ropts[self.rargs[i]][5]:
-                            opargs[self.rargs[i]].append(a)
-                         else:
-                            opargs[self.rargs[i]] = a
+                          if self.ropts[self.rargs[i]][6] == 'bool':
+                              a = True if a.lower() in ('yes','true', '') else False
+                          if self.ropts[self.rargs[i]][5]:
+                             opargs[self.rargs[i]].append(a)
+                          else:
+                             opargs[self.rargs[i]] = a
 
           except getopt.GetoptError, err:
               print str(err)

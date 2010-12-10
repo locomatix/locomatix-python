@@ -17,6 +17,11 @@
 ###############################################################################
 import httplib, urllib
 from response_handlers import *
+try: import simplejson as json
+except ImportError: 
+  try: import json
+  except ImportError:
+    raise ImportError("simplejson is not installed. Please download it from http://code.google.com/p/simplejson/")
 
 
 class LocomatixResponse(object):
@@ -33,15 +38,26 @@ class LocomatixResponse(object):
     self.status = http_response.status
     self.body = http_response.read()
     self.handler = self.__class__.HANDLER.__class__()
+    self.request_signature = None
     if self.status >= httplib.OK:
-      # try to parse the XML response
-      try:
-        xml.sax.parseString(self.body, self.handler)
-      except Exception, e:
-        print e, " - could not parse XML response"
-      self.message = self.handler.message
+      data = json.loads(self.body)
+      status = data['Status']
+      if status != 'Success':
+        self.message = status
+      else:
+        self.handler.handle(data)
+        self.message = self.handler.message
+      self.body = json.dumps(data, indent=4)
     else:
       self.message = http_response.reason
+
+
+class ListFeedsResponse(LocomatixResponse):
+  HANDLER = ListFeedsResponseHandler()
+  def __init__(self, http_response, *args):
+    super(ListFeedsResponse, self).__init__(http_response)
+    self.next_key = self.handler.next_key
+    self.feeds = self.handler.feeds
 
 
 class CreateObjectResponse(LocomatixResponse):
