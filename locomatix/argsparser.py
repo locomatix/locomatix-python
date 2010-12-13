@@ -1,6 +1,10 @@
 import os
 import sys
 import getopt
+import locomatix.logger as logger
+import logging
+
+log = logging.getLogger('locomatix')
 
 from defaults import * 
 
@@ -138,6 +142,9 @@ class ArgsParser:
 
           ipargs = [x[0] for x in self.pargs]
           opargs.update(dict(zip(ipargs, args)))
+          if opargs.get('raw'):
+            log.setLevel(logger.RAW)
+            log.addFilter(logger.RawResponseFilter())
           return opargs
 
       def usage(self, sysargs):

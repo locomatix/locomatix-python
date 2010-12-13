@@ -15,17 +15,15 @@
 # limitations under the License.
 #
 ###############################################################################
+import logging
+from locomatix import logger
+
+log = logging.getLogger('locomatix')
 
 def dprint(args, response, alt_message):
   if args.get('raw'):
-    if response.request_signature != None:
-      host, port, method, uri, body = response.request_signature
-      print 'Request:'
-      print '%s http://%s:%s%s' % (method, host, port , uri)
-      if body != '':
-        print 'body: %s' % body
-      print '\nResponse:'
-      print response.body
+    log.log(logger.RAW, '\nResponse:\n%s' % response.body)
   else:
     if alt_message:
-      print alt_message
+      log.info(alt_message)
+

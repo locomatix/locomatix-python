@@ -18,10 +18,14 @@
 from requests import *
 from responses import *
 from defaults import *
-
+import locomatix.logger as logger
+import logging
 import sys
 major, minor, micro, releaselevel, serial = sys.version_info
 SUPPORT_TIMEOUT = (major >= 2 and minor >= 6)
+
+log = logging.getLogger('locomatix')
+
 
 # DEFAULT_LOCOMATIX_VERSION = '0.9'
 # DEFAULT_LOCOMATIX_HOST = 'api.locomatix.com'
@@ -645,6 +649,9 @@ class Client():
   def _request(self, request_type, *args):
     Request, Response = REQUEST_RESPONSES[request_type]
     method, uri, body = Request(*args).dump()
+    log.log(logger.REQUEST, 'Request:\n%s http://%s:%s%s' % (method, self._host, self._port , uri))
+    if body != '':
+      log.log(logger.REQUEST, 'body: %s' % body)
     # try the request response cycle retry times
     for i in range(self._retry):
       try:
