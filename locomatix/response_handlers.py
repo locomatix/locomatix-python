@@ -59,6 +59,10 @@ class LxResponseHandler(object):
     zone.callback = self.createCallback(callback['CallbackType'], callback) 
     zone.trigger = rzone['Trigger']
     zone.predicate = rzone['Predicate']
+
+    predicate = rzone['Predicate'].rstrip().split(' ')
+    zone.from_feed = predicate[1]
+
     zone.feed = follow_object['Feed']
     zone.objectid = follow_object['ObjectID']
     zone.name_values = rzone.get('NameValues',{})
@@ -76,6 +80,10 @@ class LxResponseHandler(object):
     fence.callback = self.createCallback(callback['CallbackType'], callback)
     fence.trigger = rfence['Trigger']
     fence.predicate = rfence['Predicate']
+
+    predicate = rfence['Predicate'].rstrip().split(' ')
+    fence.from_feed = predicate[1]
+
     fence.name_values = rfence.get('NameValues',{})
     fence.state = rfence['State']
     return fence

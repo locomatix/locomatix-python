@@ -201,7 +201,7 @@ class SearchRegionRequest(LocomatixRequest):
 
 class CreateZoneRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['CreateZone']
-  def __init__(self, zoneid, objectid, feed, region, trigger, callback, predicate, name_values={}, once=False):
+  def __init__(self, zoneid, objectid, feed, region, trigger, callback, predicate, name_values={}, deactivate=False, once=False):
     params = { 
       'zoneid' : zoneid, 'oid' : objectid, \
       'feed' : feed, 'trigger': trigger, \
@@ -209,6 +209,8 @@ class CreateZoneRequest(LocomatixRequest):
     }
     if once == True:
       params['onetimealert'] = True 
+    if deactivate == True:
+      params['state'] = 'inactive'
     if not isinstance(region, LocomatixRegion):
       raise ValueError("region is an invalid type (%s) - region must derive from LocomatixRegion" % type(region))
     params.update(region._params)
@@ -259,12 +261,14 @@ class DeleteZoneRequest(LocomatixRequest):
 
 class CreateFenceRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['CreateFence']
-  def __init__(self, fenceid, region, trigger, callback, predicate, name_values={}, once=False):
+  def __init__(self, fenceid, region, trigger, callback, predicate, name_values={}, deactivate=False, once=False):
     params = {  
       'fenceid' : fenceid, 'trigger' : trigger, 'predicate' : predicate \
     }
     if once == True:
       params['onetimealert'] = True 
+    if deactivate == True:
+      params['state'] = 'inactive'
     if not isinstance(region, LocomatixRegion):
       raise ValueError("Invalid region type (%s) - region must derive from LocomatixRegion" % type(region))
     params.update(region._params)

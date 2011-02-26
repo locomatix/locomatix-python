@@ -255,7 +255,7 @@ class Client():
     return self._search_region(region, predicate, fetch_size)
   
   def create_zone(self, zoneid, objectid, feed, region, \
-                    trigger, callback, from_feed, name_values={}, once=False):
+                  trigger, callback, from_feed, name_values={}, deactivate=False, once=False):
     """Create a Zone associated with an existing object.
     
     Args:
@@ -266,12 +266,13 @@ class Client():
       callback: type and specification for alerts to be POSTed, required
       from_feed: feed to search, required
       name_values: a dictionary of name-value attribute pairs, optional
+      deactivate: indicate whether to deactivate 
     
     Return:
       Nothing"""
     predicate = 'FROM ' + from_feed
     response = self._create_zone(zoneid, objectid, feed, \
-                region, trigger, callback, predicate, name_values, once)
+                region, trigger, callback, predicate, name_values, deactivate, once)
     if response.status != httplib.OK:
       raise EXCEPTIONS[response.message]
   
@@ -346,7 +347,7 @@ class Client():
       raise EXCEPTIONS[response.message]
   
   def create_fence(self, fenceid, region, trigger,\
-                         callback, from_feed, name_values={}, once=False):
+                         callback, from_feed, name_values={}, deactivate=False, once=False):
     """Create a Fence at a fixed geographic location.
     
     Args:
@@ -360,7 +361,7 @@ class Client():
       Nothing"""
     predicate = 'FROM ' + from_feed
     response = self._create_fence(fenceid, region, \
-                         trigger, callback, predicate, name_values, once)
+                         trigger, callback, predicate, name_values, deactivate, once)
     if response.status != httplib.OK:
       raise EXCEPTIONS[response.message]
   
@@ -614,9 +615,9 @@ class Client():
       start_key = batch.next_key
 
   def _create_zone(self, zoneid, objectid, feed, region, \
-                 trigger, callback, predicate, name_values = {}, once = False):
+                 trigger, callback, predicate, name_values = {}, deactivate=False, once = False):
     return self._request('create_zone', zoneid, objectid, feed, \
-                       region, trigger, callback, predicate, name_values, once)
+                       region, trigger, callback, predicate, name_values, deactivate, once)
   
   def _activate_zone(self, zoneid, objectid, feed):
     return self._request('activate_zone', zoneid, objectid, feed)
@@ -662,9 +663,9 @@ class Client():
     return self._request('delete_zone', zoneid, objectid, feed)
   
   def _create_fence(self, fenceid, region, trigger,\
-                         callback, predicate, name_values = {}, once = False):
+                         callback, predicate, name_values = {}, deactivate = False, once = False):
     return self._request('create_fence', fenceid, region, \
-                             trigger, callback, predicate, name_values, once)
+                             trigger, callback, predicate, name_values, deactivate, once)
   
   def _activate_fence(self, fenceid):
     return self._request('activate_fence', fenceid)
