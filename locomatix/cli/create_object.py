@@ -69,7 +69,7 @@ def create_object():
     parser.usage(sys.argv)
     sys.exit(1)
   else: 
-    response = lxclient.create_object(objectid, feed, nvpairs)
+    response = lxclient._create_object(objectid, feed, nvpairs)
   
   if response.status != httplib.OK:
     dprint(args, response, "error: creating object (%s in %s) - %s" % (args['objectid'], args['feed'], response.message))
