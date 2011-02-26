@@ -18,7 +18,8 @@ class SpeedTraps(object):
     # First create a Locomatix client with the credentials
     self.conn = locomatix.Client(LOCOMATIX_CUSTID,
                                  LOCOMATIX_KEY,
-                                 LOCOMATIX_SECRET_KEY)
+                                 LOCOMATIX_SECRET_KEY,
+                                 LOCOMATIX_HOST)
 
   def tearDown(self):
     self.conn.close() 
@@ -50,12 +51,14 @@ class SpeedTraps(object):
       }
 
       location = locomatix.Point(latitude, longitude)
-      response = self.conn.create_object(id, FEED_SPEEDTRAPS, nvpairs, location, time.time());
+
+      try:
+        self.conn.create_object(id, FEED_SPEEDTRAPS, nvpairs, location, time.time());
 
       # Make sure that we have created the object successfully
-      if response.status != httplib.OK:
+      except locomatix.LxException, ex:
         print 'unable to create object %s in feed %s - %s' % \
-          (id, FEED_SPEEDTRAPS, response.message)
+          (id, FEED_SPEEDTRAPS, ex.message)
 
 if __name__ == '__main__':
 

@@ -39,7 +39,7 @@ def get_fence():
     sys.exit(1)
   
   fenceid = args['fenceid']
-  response = lxclient.get_fence(fenceid)
+  response = lxclient._get_fence(fenceid)
   
   if response.status != httplib.OK:
     dprint(args, response, "error: get fence %s - %s" % (args['fenceid'], response.message))

@@ -42,7 +42,7 @@ def get_attributes():
   objectid = args['objectid']
   feed     = args['feed']
   raw      = args['raw']
-  response = lxclient.get_attributes(objectid, feed)
+  response = lxclient._get_attributes(objectid, feed)
   
   if response.status != httplib.OK:
     dprint(args, response, "error: getting attributes for object (%s in %s) - %s" % \

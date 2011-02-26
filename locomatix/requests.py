@@ -33,12 +33,16 @@ ROUTE_SIGNATURES = {
   'SearchRegion':       ( 'GET',    '/search/Region.json',                      None     ),
   'SearchNearby':       ( 'GET',    '/search/NearbyObject.json',                None     ),
   'CreateZone':         ( 'POST',   '/zone/%s/Create.json',                     ['feed'] ),
+  'ActivateZone':       ( 'POST',   '/zone/%s/Activate.json',                   ['feed'] ),
   'GetZone':            ( 'GET',    '/zone/%s/Get.json',                        ['feed'] ),
   'ListZones':          ( 'GET',    '/zone/%s/List.json',                       ['feed'] ),
+  'DeactivateZone':     ( 'POST',   '/zone/%s/DeActivate.json',                 ['feed'] ),
   'DeleteZone':         ( 'DELETE', '/zone/%s/Delete.json',                     ['feed'] ),
   'CreateFence':        ( 'POST',   '/fence/Create.json',                       None     ),
+  'ActivateFence':      ( 'POST',   '/fence/Activate.json',                     None     ),
   'GetFence':           ( 'GET',    '/fence/Get.json',                          None     ),
   'ListFences':         ( 'GET',    '/fence/List.json',                         None     ),
+  'DeactivateFence':    ( 'POST',   '/fence/DeActivate.json',                   None     ),
   'DeleteFence':        ( 'DELETE', '/fence/Delete.json',                       None     ),
   'GetLocationHistory': ( 'GET',    '/analytics/feed/%s/object/Trail.json',     ['feed'] ),
   'GetSpaceActivity':   ( 'GET',    '/analytics/feed/%s/SpaceActivity.json',    ['feed'] )
@@ -161,19 +165,20 @@ class GetLocationRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['GetLocation']
   def __init__(self, objectid, feed, allow_expired):
     params = { 
-      'feed' : feed, 'oid' : objectid, \
-      'allowexpired' : allow_expired \
+      'feed' : feed, 'oid' : objectid \
     }
+    if allow_expired == True:
+      params['allowexpired'] = True 
     super(GetLocationRequest, self).__init__(params)
 
 
 class SearchNearbyRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['SearchNearby']
-  def __init__(self, objectid, feed, region, from_feed, fetch_start, fetch_size):
+  def __init__(self, objectid, feed, region, predicate, fetch_start, fetch_size):
     params = { 
       'feed' : feed, 'oid' : objectid, \
       'fetchstart':fetch_start, 'fetchsize':fetch_size, \
-      'fromfeed':from_feed \
+      'predicate':predicate \
     }
     if not isinstance(region, LocomatixRegion):
       raise ValueError("region is an invalid type (%s) - region must derive from LocomatixRegion" % type(region))
@@ -183,10 +188,10 @@ class SearchNearbyRequest(LocomatixRequest):
 
 class SearchRegionRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['SearchRegion']
-  def __init__(self, region, from_feed, fetch_start, fetch_size):
+  def __init__(self, region, predicate, fetch_start, fetch_size):
     params = {
       'fetchstart':fetch_start, 'fetchsize':fetch_size, \
-      'fromfeed':from_feed \
+      'predicate':predicate \
     }
     if not isinstance(region, LocomatixRegion):
       raise ValueError("Invalid region type (%s) - region must derive from LocomatixRegion" % type(region))
@@ -196,19 +201,29 @@ class SearchRegionRequest(LocomatixRequest):
 
 class CreateZoneRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['CreateZone']
-  def __init__(self, zoneid, objectid, feed, region, trigger, callback, from_feed):
+  def __init__(self, zoneid, objectid, feed, region, trigger, callback, predicate, name_values={}, once=False):
     params = { 
       'zoneid' : zoneid, 'oid' : objectid, \
       'feed' : feed, 'trigger': trigger, \
-      'fromfeed':from_feed \
+      'predicate':predicate \
     }
+    if once == True:
+      params['onetimealert'] = True 
     if not isinstance(region, LocomatixRegion):
       raise ValueError("region is an invalid type (%s) - region must derive from LocomatixRegion" % type(region))
     params.update(region._params)
     if not isinstance(callback, LocomatixCallback):
       raise ValueError("callback is an invalid type (%s) - callback must derive from LocomatixCallback" % type(callback))
     params.update(callback._params)
+    params.update(name_values)
     super(CreateZoneRequest, self).__init__(params)
+
+
+class ActivateZoneRequest(LocomatixRequest):
+  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['ActivateZone']
+  def __init__(self, zoneid, objectid, feed):
+    params = { 'zoneid' : zoneid, 'feed' : feed, 'oid' : objectid }
+    super(ActivateZoneRequest, self).__init__(params)
 
 
 class GetZoneRequest(LocomatixRequest):
@@ -228,6 +243,13 @@ class ListZonesRequest(LocomatixRequest):
     super(ListZonesRequest, self).__init__(params)
 
 
+class DeactivateZoneRequest(LocomatixRequest):
+  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['DeactivateZone']
+  def __init__(self, zoneid, objectid, feed):
+    params = { 'zoneid' : zoneid, 'feed' : feed, 'oid' : objectid }
+    super(DeactivateZoneRequest, self).__init__(params)
+
+
 class DeleteZoneRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['DeleteZone']
   def __init__(self, zoneid, objectid, feed):
@@ -237,17 +259,27 @@ class DeleteZoneRequest(LocomatixRequest):
 
 class CreateFenceRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['CreateFence']
-  def __init__(self, fenceid, region, trigger, callback, from_feed):
+  def __init__(self, fenceid, region, trigger, callback, predicate, name_values={}, once=False):
     params = {  
-      'fenceid' : fenceid, 'trigger' : trigger, 'fromfeed' : from_feed \
+      'fenceid' : fenceid, 'trigger' : trigger, 'predicate' : predicate \
     }
+    if once == True:
+      params['onetimealert'] = True 
     if not isinstance(region, LocomatixRegion):
       raise ValueError("Invalid region type (%s) - region must derive from LocomatixRegion" % type(region))
     params.update(region._params)
     if not isinstance(callback, LocomatixCallback):
       raise ValueError("callback is an invalid type (%s) - callback must derive from LocomatixCallback" % type(callback))
     params.update(callback._params)
+    params.update(name_values)
     super(CreateFenceRequest, self).__init__(params)
+
+
+class ActivateFenceRequest(LocomatixRequest):
+  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['ActivateFence']
+  def __init__(self, fenceid):
+    params = { 'fenceid' : fenceid }
+    super(ActivateFenceRequest, self).__init__(params)
 
 
 class GetFenceRequest(LocomatixRequest):
@@ -264,11 +296,19 @@ class ListFencesRequest(LocomatixRequest):
     super(ListFencesRequest, self).__init__(params)
 
 
+class DeactivateFenceRequest(LocomatixRequest):
+  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['DeactivateFence']
+  def __init__(self, fenceid):
+    params = { 'fenceid' : fenceid }
+    super(DeactivateFenceRequest, self).__init__(params)
+
+
 class DeleteFenceRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['DeleteFence']
   def __init__(self, fenceid):
     params = { 'fenceid' : fenceid }
     super(DeleteFenceRequest, self).__init__(params)
+
 
 class GetLocationHistoryRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['GetLocationHistory']
@@ -279,6 +319,7 @@ class GetLocationHistoryRequest(LocomatixRequest):
       'startkey': start_key, 'fetchsize' : fetch_size
     }
     super(GetLocationHistoryRequest, self).__init__(params)
+
 
 class GetSpaceActivityRequest(LocomatixRequest):
   METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['GetSpaceActivity']

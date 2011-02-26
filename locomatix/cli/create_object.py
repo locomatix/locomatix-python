@@ -64,7 +64,7 @@ def create_object():
     time =  args['time'] 
     ttl =  args['ttl'] 
     location = locomatix.Point(latitude, longitude)
-    response = lxclient.create_object(objectid, feed, nvpairs, location, time, ttl)  
+    response = lxclient._create_object(objectid, feed, nvpairs, location, time, ttl)  
   elif partial_location == True:
     parser.usage(sys.argv)
     sys.exit(1)

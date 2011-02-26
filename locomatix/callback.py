@@ -32,3 +32,19 @@ class URLCallback(LocomatixCallback):
     params = { 'callbacktype':'url', 'callbackurl': url }
     super(URLCallback, self).__init__(params)
 
+class ApplePushCallback(LocomatixCallback):
+  def __init__(self, message, sound, token):
+    self.type = 'applepushnotification'
+    self.message = message
+    self.sound = sound
+    self.token = token
+    params = { 
+               'callbacktype':'applepushnotification', \
+               'applepushmessage' : message,  \
+               'applepushsound' : sound,  \
+               'applepushtoken' : token  \
+             }
+
+    super(ApplePushCallback, self).__init__(params)
+
+

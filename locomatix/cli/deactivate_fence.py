@@ -21,37 +21,32 @@ import httplib
 import locomatix
 from _utils import *
 
-def delete_zone():
-  """docstring for delete_zone."""
+def deactivate_fence():
+  """docstring for deactivate_fence"""
   parser = locomatix.ArgsParser()
-  parser.add_description("Deletes a zone")
-  parser.add_roption('feed','f:', 'feed=', 'Name of the feed')
-  parser.add_roption('objectid','o:', 'objectid=', 'Object attached to zone')
-  parser.add_arg('zoneid', 'Zone to be deleted')
+  parser.add_description("Deactivates a fence")
+  parser.add_arg('fenceid', 'ID of the fence to be deactivated')
   args = parser.parse_args(sys.argv)
   
   try:
     lxclient = locomatix.Client(args['custid'], \
-                             args['key'], \
-                             args['secret-key'], \
-                             args['host'], \
-                             args['port'])
+                                args['key'], \
+                                args['secret-key'], \
+                                args['host'], \
+                                args['port'])
   except:
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  zoneid = args['zoneid']
-  objectid = args['objectid']
-  feed = args['feed']
-  response = lxclient._delete_zone(zoneid, objectid, feed)
+  fenceid = args['fenceid']
+  response = lxclient._deactivate_fence(fenceid)
   
   if response.status != httplib.OK:
-    dprint(args, response, "error: deleting zone (%s around %s in %s) - %s" % \
-                              (args['zoneid'], args['objectid'], args['feed'], response.message))
+    dprint(args, response, "error: deactivating fence %s - %s" % (args['fenceid'], response.message))
     sys.exit(1)
-    
-  dprint(args, response, "Successfully deleted zone: %s" % args['zoneid'])
+
+  dprint(args, response, "Successfully deactivated fence: %s" % args['fenceid'])
 
 
 if __name__ == '__main__':
-  delete_zone()
+  deactivate_fence()

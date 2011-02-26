@@ -47,7 +47,7 @@ def update_attributes():
   
   objectid = args['objectid']
   feed = args['feed']
-  response = lxclient.update_attributes(objectid, feed, nvpairs)
+  response = lxclient._update_attributes(objectid, feed, nvpairs)
   
   if response.status != httplib.OK:
     dprint(args, response, "error: updating attributes for object (%s in %s) - %s" % \

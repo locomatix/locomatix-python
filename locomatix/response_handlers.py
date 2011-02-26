@@ -30,7 +30,10 @@ class LxResponseHandler(object):
 
   def createCallback(self, type, params): 
     if type == 'URL':
-      return URLCallback(params['URL'])
+      return URLCallback(params['CallbackURL'])
+    elif type == 'ApplePushNotification':
+      info = params['ApplePushNotificationInfo']
+      return ApplePushCallback(info['Message'], info['Sound'], info['Token'])
     return None
 
   def createRegion(self, type, params): 
@@ -53,12 +56,13 @@ class LxResponseHandler(object):
     zone.zoneid = rzone['ZoneID']
     zone.region = self.createObjectRegion(region['RegionType'], \
                                                  region['RegionParams'])
-    zone.callback = self.createCallback(callback['CallbackType'], \
-                                        {'URL': callback['CallbackURL']})
+    zone.callback = self.createCallback(callback['CallbackType'], callback) 
     zone.trigger = rzone['Trigger']
-    zone.from_feed = rzone['FromFeed']
+    zone.predicate = rzone['Predicate']
     zone.feed = follow_object['Feed']
     zone.objectid = follow_object['ObjectID']
+    zone.name_values = rzone.get('NameValues',{})
+    zone.state = rzone['State']
     return zone
 
   def createFence(self, rfence):
@@ -69,10 +73,11 @@ class LxResponseHandler(object):
     fence.fenceid = rfence['FenceID']
     fence.region = self.createRegion(region['RegionType'], \
                                      region['RegionParams'])
-    fence.callback = self.createCallback(callback['CallbackType'], \
-                                        {'URL': callback['CallbackURL']})
+    fence.callback = self.createCallback(callback['CallbackType'], callback)
     fence.trigger = rfence['Trigger']
-    fence.from_feed = rfence['FromFeed']
+    fence.predicate = rfence['Predicate']
+    fence.name_values = rfence.get('NameValues',{})
+    fence.state = rfence['State']
     return fence
 
 class StatusResponseHandler(LxResponseHandler):

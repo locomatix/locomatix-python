@@ -21,32 +21,15 @@ import httplib
 import locomatix
 from _utils import *
 
-def update_location():
-  """docstring for update_location"""
+def activate_zone():
+  """docstring for activate_zone."""
   parser = locomatix.ArgsParser()
-  parser.add_description("Update the location of an object")
-  parser.add_arg('objectid', 'Object to be updated')
-  parser.add_roption('feed',  'f:', 'feed=', 'Name of the feed')
-  parser.add_roption('lat',   'l:', 'lat=', 'Latitude of the location')
-  parser.add_roption('long',  'g:', 'long=', 'Longitude of the location')
-  parser.add_roption('time',  't:', 'time=', 'Latitude of the location')
-  parser.add_option('ttl',    'u:', 'ttl=', 'TTL - Time validity of the location')
-  parser.add_option('nvpairs','v:', 'nv=',  'Name-value pairs (specified as name=value)', True)
+  parser.add_description("Activates a zone")
+  parser.add_roption('feed','f:', 'feed=', 'Name of the feed')
+  parser.add_roption('objectid','o:', 'objectid=', 'Object attached to zone')
+  parser.add_arg('zoneid', 'Zone to be activated')
   args = parser.parse_args(sys.argv)
   
-  longitude  = float(args['long'])
-  latitude   = float(args['lat'])
-  time       = long(args['time'])
-  objectid   = args['objectid']
-  feedid     = args['feed']
-  nvpairs    = dict()
-  
-  for anv in args['nvpairs']:
-    nv = anv.split('=')
-    nvpairs[nv[0].strip()] = nv[1].strip()
-  
-  ttl = 0 if args['ttl'] == '' else long(args['ttl'])
-
   try:
     lxclient = locomatix.Client(args['custid'], \
                              args['key'], \
@@ -57,19 +40,18 @@ def update_location():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
+  zoneid = args['zoneid']
   objectid = args['objectid']
   feed = args['feed']
-
-  location = locomatix.Point(latitude, longitude) 
-  response = lxclient._update_location(objectid, feed, location, time, nvpairs, ttl)
+  response = lxclient._activate_zone(zoneid, objectid, feed)
   
   if response.status != httplib.OK:
-    dprint(args, response, "error: updating location for object (%s in %s) - %s" % \
-                            (args['objectid'], args['feed'], response.message))
+    dprint(args, response, "error: activating zone (%s around %s in %s) - %s" % \
+                              (args['zoneid'], args['objectid'], args['feed'], response.message))
     sys.exit(1)
-
-  dprint(args, response, "Successfully updated location of object: %s" % objectid)
+    
+  dprint(args, response, "Successfully activated zone: %s" % args['zoneid'])
 
 
 if __name__ == '__main__':
-  update_location()
+  activate_zone()

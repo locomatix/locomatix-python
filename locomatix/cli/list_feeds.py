@@ -42,7 +42,7 @@ def list_feeds():
       dprint(args, batch, "error: failed to retrieve feed list - %s" % (batch.message))
       continue
 
-    dprint(args, batch, '\n'.join('%s' % feed for feed in batch.feeds))
+  dprint(args, batch, '\n'.join('%s' % feed for feed in batch.feeds))
 
 
 if __name__ == '__main__':

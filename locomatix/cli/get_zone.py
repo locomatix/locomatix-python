@@ -43,7 +43,7 @@ def get_zone():
   zoneid = args['zoneid']
   objectid = args['objectid']
   feed = args['feed']
-  response = lxclient.get_zone(zoneid, objectid, feed)
+  response = lxclient._get_zone(zoneid, objectid, feed)
   
   if response.status != httplib.OK:
     dprint(args, response, "error: getting zone (%s around %s in %s) - %s" % \

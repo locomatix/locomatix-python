@@ -16,7 +16,7 @@
 #
 ###############################################################################
 __all__ = ['argsparser', 'client','requests','responses', 'keys', \
-           'region', 'callback', 'response_handlers','cli']
+           'region', 'callback', 'response_handlers','cli', 'exceptions']
 
 from argsparser import ArgsParser
 from client import Client
@@ -24,3 +24,4 @@ from region import *
 from callback import *
 from keys import *
 from defaults import *
+from exceptions import *

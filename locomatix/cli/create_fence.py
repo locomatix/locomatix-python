@@ -32,8 +32,16 @@ def create_fence():
   parser.add_roption('trigger',  't:', 'trigger=', 'Trigger type (Ingress | Egress | IngressAndEgress)')
   parser.add_roption('callbackURL',  'u:', 'url=', 'Callback URL')
   parser.add_roption('from-feed','m:', 'from=',  'From feed')
+  parser.add_option('nvpairs','v:', 'nv=',   'Name-value pairs (specified as name=value)', True)
+  parser.add_option('once',  'n', 'once', 'Fire the alert only once', type='bool')
+
   args = parser.parse_args(sys.argv)
   
+  nvpairs = dict()
+  for anv in args['nvpairs']:
+    nv = anv.split('=')
+    nvpairs[nv[0].strip()] = nv[1].strip()
+
   try:
     lxclient = locomatix.Client(args['custid'], \
                              args['key'], \
@@ -50,8 +58,10 @@ def create_fence():
   trigger    = args['trigger']
   callback   = locomatix.URLCallback(args['callbackURL'])
   from_feed  = args['from-feed']
-  
-  response = lxclient.create_fence(fencekey, region, trigger, callback, from_feed)
+  predicate = 'FROM ' + from_feed
+  once = True if args['once'] == True else False
+
+  response = lxclient._create_fence(fencekey, region, trigger, callback, predicate, nvpairs, once)
   
   if response.status != httplib.OK:
     dprint(args, response, "error: creating fence %s - %s" % (args['fenceid'], response.message))

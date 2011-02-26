@@ -27,7 +27,7 @@ def get_location():
   parser.add_description("Get the location of an object")
   parser.add_arg('objectid', 'Object to be fetched')
   parser.add_roption('feed',  'f:', 'feed=', 'Name of the feed')
-  parser.add_option('expired',  'e:', 'expired', 'Give the location even if it has expired')
+  parser.add_option('expired',  'e', 'expired', 'Give the location even if it has expired', type='bool')
   args = parser.parse_args(sys.argv)
   
   try:
@@ -42,9 +42,9 @@ def get_location():
   
   objectid = args['objectid']
   feed = args['feed']
-
-  expired = True if 'expired' in args else False
-  response = lxclient.get_location(objectid, feed, expired)
+ 
+  expired = True if args['expired'] == True else False
+  response = lxclient._get_location(objectid, feed, expired)
   
   if response.status != httplib.OK:
     dprint(args, response, "error: getting location for object (%s in %s) - %s" % \

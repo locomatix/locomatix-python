@@ -39,7 +39,7 @@ def delete_fence():
     sys.exit(1)
   
   fenceid = args['fenceid']
-  response = lxclient.delete_fence(fenceid)
+  response = lxclient._delete_fence(fenceid)
   
   if response.status != httplib.OK:
     dprint(args, response, "error: deleting fence %s - %s" % (args['fenceid'], response.message))

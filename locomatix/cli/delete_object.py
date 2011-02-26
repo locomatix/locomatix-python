@@ -42,7 +42,7 @@ def delete_object():
   objectid = args['objectid']
   feed     = args['feed']
   raw = args['raw']
-  response = lxclient.delete_object(objectid, feed)
+  response = lxclient._delete_object(objectid, feed)
   
   if response.status != httplib.OK:
     dprint(args, response, "error: deleting object (%s in %s) - %s" % (args['objectid'], args['feed'], response.message))

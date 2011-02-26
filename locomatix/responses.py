@@ -23,7 +23,6 @@ except ImportError:
   except ImportError:
     raise ImportError("simplejson is not installed. Please download it from http://code.google.com/p/simplejson/")
 
-
 class LocomatixResponse(object):
   """This is the base Locomatix Response object from which all Responses are derived.
   
@@ -39,6 +38,7 @@ class LocomatixResponse(object):
     self.body = http_response.read()
     self.handler = self.__class__.HANDLER.__class__()
     self.request_signature = None
+    self.message = None
     if self.status >= httplib.OK:
       data = json.loads(self.body)
       status = data['Status']
@@ -50,7 +50,6 @@ class LocomatixResponse(object):
       self.body = json.dumps(data, indent=4)
     else:
       self.message = http_response.reason
-
 
 class ListFeedsResponse(LocomatixResponse):
   HANDLER = ListFeedsResponseHandler()
@@ -118,6 +117,10 @@ class CreateZoneResponse(LocomatixResponse):
   HANDLER = StatusResponseHandler()
 
 
+class ActivateZoneResponse(LocomatixResponse):
+  HANDLER = StatusResponseHandler()
+
+
 class GetZoneResponse(LocomatixResponse):
   HANDLER = GetZoneResponseHandler()
   def __init__(self, http_response, *args):
@@ -133,11 +136,19 @@ class ListZonesResponse(LocomatixResponse):
     self.zones  = self.handler.zones
 
 
+class DeactivateZoneResponse(LocomatixResponse):
+  HANDLER = StatusResponseHandler()
+
+
 class DeleteZoneResponse(LocomatixResponse):
   HANDLER = StatusResponseHandler()
 
 
 class CreateFenceResponse(LocomatixResponse):
+  HANDLER = StatusResponseHandler()
+
+
+class ActivateFenceResponse(LocomatixResponse):
   HANDLER = StatusResponseHandler()
 
 
@@ -154,6 +165,10 @@ class ListFencesResponse(LocomatixResponse):
     super(ListFencesResponse, self).__init__(http_response)
     self.next_key = self.handler.next_key
     self.fences = self.handler.fences
+
+
+class DeactivateFenceResponse(LocomatixResponse):
+  HANDLER = StatusResponseHandler()
 
 
 class DeleteFenceResponse(LocomatixResponse):

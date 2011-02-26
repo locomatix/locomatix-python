@@ -45,12 +45,12 @@ class Car(Thread):
     car_nvpairs = { 'Name' : name , 'License' : license }
 
     # Now create the car object in the feed 'cars'
-    response = self.conn.create_object(id, FEED_CARS, car_nvpairs)
+    try:
+      self.conn.create_object(id, FEED_CARS, car_nvpairs)
 
     # Make sure that we have created the car object successfully
-    if response.status != httplib.OK:
-      print 'unable to create car %s in feed %s - %s' % \
-        (id, FEED_CARS, response.message)
+    except locomatix.LxException, ex:
+      print 'unable to create car %s in feed %s - %s' % (id, FEED_CARS, ex.message)
 
   ###########################################################################
   # Add Zone - 
@@ -73,13 +73,14 @@ class Car(Thread):
 
     # Create a zone around the car in the Locomatix cloud and inform that alert 
     # is to be generated when a speed trap enters the zone
-    response = self.conn.create_zone(self.zoneid, self.carid, 
+    try:
+      self.conn.create_zone(self.zoneid, self.carid, 
                                 FEED_CARS, region, 'Ingress', callback, from_feed)
 
     # Make sure that we have created the zone around object successfully
-    if response.status != httplib.OK:
+    except locomatix.LxException, ex:
       print 'unable to create zone %s around %s in feed %s - %s' % \
-          (self.zoneid, self.carid, FEED_CARS, response.message)
+           (self.zoneid, self.carid, FEED_CARS, ex.message)
 
   ####################################################################
   # Move -
@@ -89,12 +90,14 @@ class Car(Thread):
    
     # Update the location of the car in the locomatix cloud
     location = locomatix.Point(latitude, longitude)
-    response = self.conn.update_location(self.carid, FEED_CARS, location, time.time())
+
+    try:
+      self.conn.update_location(self.carid, FEED_CARS, location, time.time())
 
     # Make sure that we have updated the car location successfully
-    if response.status != httplib.OK:
+    except locomatix.LxException, ex:
       print 'unable to update location of car %s in feed %s - %s' % \
-        (self.carid, FEED_CARS, response.message)
+        (self.carid, FEED_CARS, ex.message)
 
   #################################################################################
   # Setup -
@@ -102,16 +105,22 @@ class Car(Thread):
   #################################################################################
   def setUp(self):
 
-    # First create Locomatix Client with the credentials
-    self.conn = locomatix.Client(LOCOMATIX_CUSTID, 
-                                 LOCOMATIX_KEY,
-                                 LOCOMATIX_SECRET_KEY)
+    try:
+      # First create Locomatix Client with the credentials
+      self.conn = locomatix.Client(LOCOMATIX_CUSTID, 
+                                   LOCOMATIX_KEY,
+                                   LOCOMATIX_SECRET_KEY,
+                                   LOCOMATIX_HOST)
 
-    # Create the car object in Locomatix cloud
-    self.create(self.carid, self.name, self.license)
+      # Create the car object in Locomatix cloud
+      self.create(self.carid, self.name, self.license)
 
-    # Add a speed alert zone around the car
-    self.add_zone(self.radius, self.callback_url)
+      # Add a speed alert zone around the car
+      self.add_zone(self.radius, self.callback_url)
+
+    except locomatix.LxException, ex:
+      print 'error occurred for car %s in feed %s - %s' % (self.carid, FEED_CARS, ex.message)
+      sys.exit(1)
 
     # Now read the movement data file
     try:
@@ -138,21 +147,23 @@ class Car(Thread):
   ####################################################################
   def tearDown(self):
 
-    # First delete the zone around the car
-    response = self.conn.delete_zone(self.zoneid, self.carid, FEED_CARS)
+    try:
+      # First delete the zone around the car
+      self.conn.delete_zone(self.zoneid, self.carid, FEED_CARS)
 
     # Make sure that we have deleted the zone around the car successfully
-    if response.status != httplib.OK:
+    except locomatix.LxException, ex: 
       print 'unable to delete zone %s around car %s in feed %s - %s' % \
-        (self.zoneid, self.carid, FEED_CARS, response.message)
+        (self.zoneid, self.carid, FEED_CARS, ex.message)
 
-    # Delete the car object in the feed 'cars'
-    response = self.conn.delete_object(self.carid, FEED_CARS)
+    try:
+      # Delete the car object in the feed 'cars'
+      self.conn.delete_object(self.carid, FEED_CARS)
 
     # Make sure that we have deleted the car successfully
-    if response.status != httplib.OK:
+    except locomatix.LxException, ex: 
       print 'unable to delete car %s in feed %s - %s' % \
-        (self.carid, FEED_CARS, response.message)
+        (self.carid, FEED_CARS, ex.message)
   
     # Now close the Locomatix cloud connection
     self.conn.close()
