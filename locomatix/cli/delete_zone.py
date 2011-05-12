@@ -17,7 +17,6 @@
 #
 ###############################################################################
 import sys
-import httplib
 import locomatix
 from _utils import *
 
@@ -25,17 +24,17 @@ def delete_zone():
   """docstring for delete_zone."""
   parser = locomatix.ArgsParser()
   parser.add_description("Deletes a zone")
-  parser.add_roption('feed','f:', 'feed=', 'Name of the feed')
-  parser.add_roption('objectid','o:', 'objectid=', 'Object attached to zone')
-  parser.add_arg('zoneid', 'Zone to be deleted')
+  parser.add_arg('zoneid',  'Zone to be deleted')
+  parser.add_arg('objectid','Object attached to zone')
+  parser.add_arg('feed',    'Name of the feed')
   args = parser.parse_args(sys.argv)
   
   try:
     lxclient = locomatix.Client(args['custid'], \
-                             args['key'], \
-                             args['secret-key'], \
-                             args['host'], \
-                             args['port'])
+                                args['key'], \
+                                args['secret-key'], \
+                                args['host'], \
+                                args['port'])
   except:
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
@@ -43,14 +42,16 @@ def delete_zone():
   zoneid = args['zoneid']
   objectid = args['objectid']
   feed = args['feed']
-  response = lxclient._delete_zone(zoneid, objectid, feed)
+
+  try:
+    lxclient.delete_zone(zoneid, objectid, feed)
   
-  if response.status != httplib.OK:
-    dprint(args, response, "error: deleting zone (%s around %s in %s) - %s" % \
-                              (args['zoneid'], args['objectid'], args['feed'], response.message))
+  except locomatix.LxException, e:
+    dprint(args, lxclient.response_body(), "error: deleting zone (%s around %s in %s) - %s" % \
+                              (zoneid, objectid, feed, str(e)))
     sys.exit(1)
     
-  dprint(args, response, "Successfully deleted zone: %s" % args['zoneid'])
+  dprint(args, lxclient.response_body(), "Successfully deleted zone: %s" % zoneid)
 
 
 if __name__ == '__main__':

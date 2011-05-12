@@ -17,7 +17,6 @@
 #
 ###############################################################################
 import sys
-import httplib
 import locomatix
 from _utils import *
 
@@ -25,10 +24,10 @@ def search_nearby():
   """docstring for search_nearby"""
   parser = locomatix.ArgsParser()
   parser.add_description("Finds all objects within a region around a given object")
-  parser.add_roption('feed','f:', 'feed=', 'Name of the feed of paren object')
-  parser.add_roption('objectid','o:', 'objectid=', 'Object around which to search')
-  parser.add_roption('radius',  'r:', 'radius=', 'Radius of search region in meters')
-  parser.add_roption('from-feed','m:', 'from=', 'Feed to include in search')
+  parser.add_arg('objectid', 'Object around which to search')
+  parser.add_arg('feed',     'Name of the feed of paren object')
+  parser.add_arg('radius',   'Radius of search region in meters')
+  parser.add_arg('from-feed','Feed to include in search')
   args = parser.parse_args(sys.argv)
   
   try:
@@ -41,17 +40,29 @@ def search_nearby():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  objectid = args['objectid']
-  feed = args['feed']
-  region = locomatix.Circle(float(args['radius']))
-  from_feed = args['from-feed']
+  try:
+    objectid = args['objectid']
+    feed = args['feed']
+    region = locomatix.Circle(float(args['radius']))
+    predicate = lxclient._lql_query(args['from-feed'])
 
-  for batch in lxclient._search_nearby_iterator(objectid, feed, region, from_feed, allow_error=True):
-    if batch.status > httplib.OK:
-      dprint(args, batch, "error: failed to retrieve search nearby list for (%s in %s) - %s" % (objectid, feed, batch.message))
-      continue
+    start_key = locomatix.DEFAULT_FETCH_STARTKEY
+    fetch_size = locomatix.DEFAULT_FETCH_SIZE
 
-    dprint(args, batch, '\n'.join('%s' % obj for obj in batch.objects))
+    while True:
+      batch = lxclient._request('search_nearby', objectid, feed, region, predicate, start_key, fetch_size)
+      dprint(args, lxclient.response_body(), '\n'.join('%s' % obj for obj in batch.objlocs))
+      if batch.next_key == None:
+        break # this is the last batch
+      start_key = batch.next_key
+
+  except locomatix.LxException, e:
+    dprint(args, lxclient.response_body(), \
+        "error: failed to retrieve search nearby list for (%s in %s) - %s" % (objectid, feed, str(e)))
+    sys.exit(1)
+
+  except KeyboardInterrupt:
+    sys.exit(1)
 
 
 if __name__ == '__main__':

@@ -17,7 +17,6 @@
 #
 ###############################################################################
 import sys
-import httplib
 import locomatix
 from _utils import *
 
@@ -25,13 +24,13 @@ def create_fence():
   """docstring for create_fence"""
   parser = locomatix.ArgsParser()
   parser.add_description("Creates a fence")
-  parser.add_arg('fenceid', 'Fence to be created')
-  parser.add_roption('lat',  'l:', 'lat=', 'Latitude of the location')
-  parser.add_roption('long', 'g:', 'long=', 'Longitude of the location')
-  parser.add_roption('radius',  'r:', 'radius=', 'Fence radius around the location')
-  parser.add_roption('trigger',  't:', 'trigger=', 'Trigger type (Ingress | Egress | IngressAndEgress)')
-  parser.add_roption('callbackURL',  'u:', 'url=', 'Callback URL')
-  parser.add_roption('from-feed','m:', 'from=',  'From feed')
+  parser.add_arg('fenceid',    'Fence to be created')
+  parser.add_arg('latitude',        'Latitude of the location')
+  parser.add_arg('longitude',       'Longitude of the location')
+  parser.add_arg('radius',     'Fence radius around the location')
+  parser.add_arg('trigger',    'Trigger type (Ingress | Egress | IngressAndEgress)')
+  parser.add_arg('callbackURL','Callback URL')
+  parser.add_arg('from-feed',  'Feed to monitor the objects from')
   parser.add_option('nvpairs','v:', 'nv=',   'Name-value pairs (specified as name=value)', True)
   parser.add_option('once',  'n', 'once', 'Fire the alert only once', type='bool')
 
@@ -44,30 +43,30 @@ def create_fence():
 
   try:
     lxclient = locomatix.Client(args['custid'], \
-                             args['key'], \
-                             args['secret-key'], \
-                             args['host'], \
-                             args['port'])
+                                args['key'], \
+                                args['secret-key'], \
+                                args['host'], \
+                                args['port'])
   except:
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  fencekey   = args['fenceid']
-  region     = locomatix.Circle(float(args['lat']), float(args['long']), \
+  fenceid    = args['fenceid']
+  region     = locomatix.Circle(float(args['latitude']), float(args['longitude']), \
                                       float(args['radius']))
   trigger    = args['trigger']
   callback   = locomatix.URLCallback(args['callbackURL'])
   from_feed  = args['from-feed']
-  predicate = 'FROM ' + from_feed
-  once = True if args['once'] == True else False
+  once = True if args['once'] else False
 
-  response = lxclient._create_fence(fencekey, region, trigger, callback, predicate, nvpairs, once)
+  try:
+    lxclient.create_fence(fenceid, region, trigger, callback, from_feed, nvpairs, once)
   
-  if response.status != httplib.OK:
-    dprint(args, response, "error: creating fence %s - %s" % (args['fenceid'], response.message))
+  except locomatix.LxException, e:
+    dprint(args, lxclient.response_body(), "error: creating fence %s - %s" % (fenceid, str(e)))
     sys.exit(1)
 
-  dprint(args, response, "Successfully created fence: %s" % args['fenceid'])
+  dprint(args, lxclient.response_body(), "Successfully created fence: %s" % fenceid)
 
 
 if __name__ == '__main__':

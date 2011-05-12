@@ -16,17 +16,22 @@
 #
 ###############################################################################
 
-__all__ = ['list_feeds', 
-           'create_object','delete_object','list_objects', \
+__all__ = ['create_feed', 'delete_feed', 'list_feeds', \
+           'create_object','delete_object', 'delete_all_objects', 'list_objects', \
            'update_attributes','get_attributes', 'update_location','get_location', \
-           'create_zone',  'activate_zone', 'get_zone', 'deactivate_zone', 'delete_zone', 'list_zones', \
-           'create_fence', 'activate_fence','get_fence','deactivate_fence','delete_fence','list_fences' \
+           'create_zone',  'activate_zone', 'get_zone', 'deactivate_zone', \
+           'delete_zone', 'delete_all_zones', 'list_zones', \
+           'create_fence', 'activate_fence','get_fence','deactivate_fence', \
+           'delete_fence', 'delete_all_fences', 'list_fences' \
            'get_location_history', 'get_space_activity'
 ]
 
+from create_feed import create_feed
+from delete_feed import delete_feed
 from list_feeds import list_feeds
 from create_object import create_object
 from delete_object import delete_object
+from delete_all_objects import delete_all_objects
 from list_objects import list_objects
 from update_attributes import update_attributes
 from get_attributes import get_attributes
@@ -36,6 +41,7 @@ from create_zone import create_zone
 from activate_zone import activate_zone
 from get_zone import get_zone
 from delete_zone import delete_zone
+from delete_all_zones import delete_all_zones
 from deactivate_zone import deactivate_zone
 from list_zones import list_zones
 from create_fence import create_fence
@@ -43,6 +49,7 @@ from activate_fence import activate_fence
 from get_fence import get_fence
 from deactivate_fence import deactivate_fence
 from delete_fence import delete_fence
+from delete_all_fences import delete_all_fences
 from list_fences import list_fences
 from search_region import search_region
 from search_nearby import search_nearby

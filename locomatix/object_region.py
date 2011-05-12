@@ -15,10 +15,6 @@
 # limitations under the License.
 #
 ###############################################################################
-
-import sys, os
-import httplib, urllib
-
 from response_objects import PrintableAttributes
 
 class LocomatixObjectRegion(PrintableAttributes):

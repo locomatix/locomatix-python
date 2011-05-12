@@ -17,7 +17,6 @@
 #
 ###############################################################################
 import sys
-import httplib
 import locomatix
 from _utils import *
 
@@ -39,13 +38,15 @@ def get_fence():
     sys.exit(1)
   
   fenceid = args['fenceid']
-  response = lxclient._get_fence(fenceid)
+
+  try:
+    fence = lxclient.get_fence(fenceid)
   
-  if response.status != httplib.OK:
-    dprint(args, response, "error: get fence %s - %s" % (args['fenceid'], response.message))
+  except locomatix.LxException, e:
+    dprint(args, lxclient.response_body(), "error: get fence %s - %s" % (fenceid, str(e)))
     sys.exit(1)
   
-  dprint(args, response, '%s' % response.fence)
+  dprint(args, lxclient.response_body(), '%s' % fence)
 
 
 if __name__ == '__main__':

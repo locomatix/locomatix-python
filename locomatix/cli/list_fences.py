@@ -17,7 +17,6 @@
 #
 ###############################################################################
 import sys
-import httplib
 import locomatix
 from _utils import *
 
@@ -37,13 +36,24 @@ def list_fences():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  for batch in lxclient._list_fences_iterator(allow_error=True):
-    if batch.status > httplib.OK:
-      dprint(args, batch, "error: failed to retrieve fence list - %s" % (batch.message))
-      continue
+  try:
 
-    dprint(args, batch, '\n'.join('%s' % fence for fence in batch.fences))
+    start_key = locomatix.DEFAULT_FETCH_STARTKEY
+    fetch_size = locomatix.DEFAULT_FETCH_SIZE
 
+    while True:
+      batch = lxclient._request('list_fences', start_key, fetch_size)
+      dprint(args, lxclient.response_body(), '\n'.join('%s' % fence for fence in batch.fences))
+      if batch.next_key == None:
+        break # this is the last batch
+      start_key = batch.next_key
+
+  except locomatix.LxException, e:
+    dprint(args, lxclient.response_body(), "error: failed to retrieve fence list - %s" % (str(e)))
+    sys.exit(1)
+     
+  except KeyboardInterrupt:
+    sys.exit(1)
 
 if __name__ == '__main__':
   list_fences()

@@ -17,7 +17,6 @@
 #
 ###############################################################################
 import sys
-import httplib
 import locomatix
 from _utils import *
 
@@ -26,7 +25,7 @@ def get_location():
   parser = locomatix.ArgsParser()
   parser.add_description("Get the location of an object")
   parser.add_arg('objectid', 'Object to be fetched')
-  parser.add_roption('feed',  'f:', 'feed=', 'Name of the feed')
+  parser.add_arg('feed',     'Name of the feed')
   parser.add_option('expired',  'e', 'expired', 'Give the location even if it has expired', type='bool')
   args = parser.parse_args(sys.argv)
   
@@ -42,16 +41,17 @@ def get_location():
   
   objectid = args['objectid']
   feed = args['feed']
- 
-  expired = True if args['expired'] == True else False
-  response = lxclient._get_location(objectid, feed, expired)
+  expired = True if args['expired'] else False
+
+  try:
+    loc = lxclient.get_location(objectid, feed, expired)
   
-  if response.status != httplib.OK:
-    dprint(args, response, "error: getting location for object (%s in %s) - %s" % \
-                                  (args['objectid'], args['feed'], response.message))
+  except locomatix.LxException, e:
+    dprint(args, lxclient.response_body(), \
+      "error: getting location for object (%s in %s) - %s" % (objectid, feed, str(e)))
     sys.exit(1)
 
-  dprint(args, response, '%s' % response.object)
+  dprint(args, lxclient.response_body(), '%s' % loc)
 
 
 if __name__ == '__main__':

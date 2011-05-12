@@ -17,7 +17,6 @@
 #
 ###############################################################################
 import sys
-import httplib
 import locomatix
 from _utils import *
 
@@ -26,7 +25,7 @@ def get_attributes():
   parser = locomatix.ArgsParser()
   parser.add_description("Get the attributes of an object")
   parser.add_arg('objectid', 'Object to be fetched')
-  parser.add_roption('feed',  'f:', 'feed=', 'Name of the feed')
+  parser.add_arg('feed',     'Name of the feed')
   args = parser.parse_args(sys.argv)
   
   try:
@@ -41,15 +40,16 @@ def get_attributes():
   
   objectid = args['objectid']
   feed     = args['feed']
-  raw      = args['raw']
-  response = lxclient._get_attributes(objectid, feed)
+
+  try:
+    obj = lxclient.get_attributes(objectid, feed)
   
-  if response.status != httplib.OK:
-    dprint(args, response, "error: getting attributes for object (%s in %s) - %s" % \
-                                    (args['objectid'], args['feed'], response.message))
+  except locomatix.LxException, e:
+    dprint(args, lxclient.response_body(), "error: getting attributes for object (%s in %s) - %s" % \
+                                    (objectid, feed, str(e)))
     sys.exit(1)
   
-  dprint(args, response, '%s' % response.object)
+  dprint(args, lxclient.response_body(), '%s' % obj)
 
 
 if __name__ == '__main__':

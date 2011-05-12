@@ -15,13 +15,14 @@
 # limitations under the License.
 #
 ###############################################################################
-import sys, os
-import httplib, urllib
-from region import LocomatixRegion
-from callback import LocomatixCallback
+import urllib
+from region import *
+from callback import *
 
 
 ROUTE_SIGNATURES = {
+  'CreateFeed':         ( 'POST',    '/feed/Create.json',                       None     ),
+  'DeleteFeed':         ( 'DELETE',  '/feed/Delete.json',                       None     ),
   'ListFeeds':          ( 'GET',    '/feed/List.json',                          None     ),
   'CreateObject':       ( 'POST',   '/feed/%s/object/Create.json',              ['feed'] ),
   'DeleteObject':       ( 'DELETE', '/feed/%s/object/Delete.json',              ['feed'] ),
@@ -45,8 +46,16 @@ ROUTE_SIGNATURES = {
   'DeactivateFence':    ( 'POST',   '/fence/DeActivate.json',                   None     ),
   'DeleteFence':        ( 'DELETE', '/fence/Delete.json',                       None     ),
   'GetLocationHistory': ( 'GET',    '/analytics/feed/%s/object/Trail.json',     ['feed'] ),
-  'GetSpaceActivity':   ( 'GET',    '/analytics/feed/%s/SpaceActivity.json',    ['feed'] )
+  'GetSpaceActivity':   ( 'GET',    '/analytics/feed/%s/SpaceActivity.json',    ['feed'] ),
+  'GetHistogram':       ( 'GET',    '/analytics/feed/%s/ObjectGrid.json',       ['feed'] )
 }
+
+def tnvs(name_values):
+  nvs = dict()
+  for n, v in name_values.items():
+    nvs[n] = v.encode("utf-8") if isinstance(v, unicode) else v
+  return nvs
+
 
 class LocomatixRequest(object):
   """An abstract request object from which all API requests will be derived.
@@ -64,7 +73,6 @@ class LocomatixRequest(object):
   METHOD = the actual HTTP method used (GET, PUT, DELETE, POST)
   URI_FORMAT = a printf style format string used to build the uri, e.f. '/feed/%s/object/Create'
   URI_PARAMS = a list of param names that will be inserted into the URI_FORMAT"""
-  METHOD, URI_FORMAT, URI_PARAMS = (None, None, None)
   
   def __init__(self, params):
     self._params = params # descendent requests should assemble args into this instance dictionary
@@ -74,24 +82,24 @@ class LocomatixRequest(object):
   
   def _set_method(self):
     """Sets the instance _method by simply copying the METHOD class attribute"""
-    self._method = self.__class__.METHOD
+    self._method = self.METHOD
   
   def _set_uri(self):
     """Inserts uri params into _uri, deletes them from the _params dictionary.
     
     If this is a GET or DELETE request, adds remaining params as query string"""
     uri_params = []
-    if self.__class__.URI_PARAMS:
-      for param_name in self.__class__.URI_PARAMS:
+    if self.URI_PARAMS:
+      for param_name in self.URI_PARAMS:
         uri_params.append(urllib.quote_plus(self._params[param_name]))
         del self._params[param_name]
-    self._uri = self.__class__.URI_FORMAT % tuple(uri_params)
-    if self.__class__.METHOD in ('GET','DELETE'):
+    self._uri = self.URI_FORMAT % tuple(uri_params)
+    if self.METHOD in ('GET','DELETE'):
       self._uri += '?' + urllib.urlencode(self._params)
   
   def _set_body(self):
     """If this is a POST or PUT request, adds params as query string to the body."""
-    if self.__class__.METHOD in ('POST','PUT'):
+    if self.METHOD in ('POST','PUT'):
       self._body = urllib.urlencode(self._params)
     else:
       self._body = self.__class__.EMPTY_BODY
@@ -101,18 +109,31 @@ class LocomatixRequest(object):
     return (self._method, self._uri, self._body)
 
 
+class CreateFeedRequest(LocomatixRequest):
+  def __init__(self, feed, name_values={}):
+    self.METHOD, self.URI_FORMAT, self.URI_PARAMS = ROUTE_SIGNATURES['CreateFeed']
+    params = dict({ 'feed' : feed })
+    params.update(tnvs(name_values))
+    super(CreateFeedRequest, self).__init__(params)
+
+class DeleteFeedRequest(LocomatixRequest):
+  def __init__(self, feed):
+    self.METHOD, self.URI_FORMAT, self.URI_PARAMS = ROUTE_SIGNATURES['DeleteFeed']
+    params = { 'feed' : feed }
+    super(DeleteFeedRequest, self).__init__(params)
+
 class ListFeedsRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['ListFeeds']
   def __init__(self, start_key, fetch_size):
+    self.METHOD, self.URI_FORMAT, self.URI_PARAMS = ROUTE_SIGNATURES['ListFeeds']
     params = { 'startkey' : start_key, 'fetchsize' : fetch_size }
     super(ListFeedsRequest, self).__init__(params)
 
 
 class CreateObjectRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['CreateObject']
   def __init__(self, objectid, feed, name_values={}, location = None, time = 0, ttl=0):
-    params = { 'feed':feed, 'oid':objectid }
-    params.update(name_values)
+    self.METHOD,   self.URI_FORMAT,  self.URI_PARAMS = ROUTE_SIGNATURES['CreateObject']
+    params = dict({ 'feed':feed, 'oid':objectid })
+    params.update(tnvs(name_values))
     if location != None:
       params.update(location._params)
       params['time'] = int(time)
@@ -122,64 +143,64 @@ class CreateObjectRequest(LocomatixRequest):
 
 
 class DeleteObjectRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['DeleteObject']
   def __init__(self, objectid, feed):
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['DeleteObject']
     params = { 'feed':feed, 'oid':objectid }
     super(DeleteObjectRequest, self).__init__(params)
 
 
 class ListObjectsRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['ListObjects']
   def __init__(self, feed, start_key, fetch_size):
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['ListObjects']
     params = { 'feed' : feed, 'startkey':start_key, 'fetchsize':fetch_size }
     super(ListObjectsRequest, self).__init__(params)
 
 
 class GetAttributesRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['GetAttributes']
   def __init__(self, objectid, feed):
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['GetAttributes']
     params = { 'feed':feed, 'oid':objectid }
     super(GetAttributesRequest, self).__init__(params)
 
 
 class UpdateAttributesRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['UpdateAttributes']
   def __init__(self, objectid, feed, name_values={}):
-    params = { 'feed':feed, 'oid':objectid }
-    params.update(name_values)
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['UpdateAttributes']
+    params = dict({ 'feed':feed, 'oid':objectid })
+    params.update(tnvs(name_values))
     super(UpdateAttributesRequest, self).__init__(params)
 
 
 class UpdateLocationRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['UpdateLocation']
   def __init__(self, objectid, feed, location, time, name_values={}, ttl=0):
-    params = { 'oid' : objectid, 'feed' : feed, 'time': int(time) }
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['UpdateLocation']
+    params = dict({ 'oid' : objectid, 'feed' : feed, 'time': int(time) })
     params.update(location._params)
-    params.update(name_values)
+    params.update(tnvs(name_values))
     if ttl != 0:
       params['ttl'] = ttl
     super(UpdateLocationRequest, self).__init__(params)
 
 
 class GetLocationRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['GetLocation']
   def __init__(self, objectid, feed, allow_expired):
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['GetLocation']
     params = { 
       'feed' : feed, 'oid' : objectid \
     }
-    if allow_expired == True:
+    if allow_expired:
       params['allowexpired'] = True 
     super(GetLocationRequest, self).__init__(params)
 
 
 class SearchNearbyRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['SearchNearby']
   def __init__(self, objectid, feed, region, predicate, fetch_start, fetch_size):
-    params = { 
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['SearchNearby']
+    params = dict({ 
       'feed' : feed, 'oid' : objectid, \
       'fetchstart':fetch_start, 'fetchsize':fetch_size, \
       'predicate':predicate \
-    }
+    })
     if not isinstance(region, LocomatixRegion):
       raise ValueError("region is an invalid type (%s) - region must derive from LocomatixRegion" % type(region))
     params.update(region._params)
@@ -187,12 +208,12 @@ class SearchNearbyRequest(LocomatixRequest):
 
 
 class SearchRegionRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['SearchRegion']
   def __init__(self, region, predicate, fetch_start, fetch_size):
-    params = {
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['SearchRegion']
+    params = dict({
       'fetchstart':fetch_start, 'fetchsize':fetch_size, \
       'predicate':predicate \
-    }
+    })
     if not isinstance(region, LocomatixRegion):
       raise ValueError("Invalid region type (%s) - region must derive from LocomatixRegion" % type(region))
     params.update(region._params)
@@ -200,16 +221,16 @@ class SearchRegionRequest(LocomatixRequest):
 
 
 class CreateZoneRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['CreateZone']
   def __init__(self, zoneid, objectid, feed, region, trigger, callback, predicate, name_values={}, deactivate=False, once=False):
-    params = { 
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['CreateZone']
+    params = dict({ 
       'zoneid' : zoneid, 'oid' : objectid, \
       'feed' : feed, 'trigger': trigger, \
       'predicate':predicate \
-    }
-    if once == True:
+    })
+    if once:
       params['onetimealert'] = True 
-    if deactivate == True:
+    if deactivate:
       params['state'] = 'inactive'
     if not isinstance(region, LocomatixRegion):
       raise ValueError("region is an invalid type (%s) - region must derive from LocomatixRegion" % type(region))
@@ -217,27 +238,27 @@ class CreateZoneRequest(LocomatixRequest):
     if not isinstance(callback, LocomatixCallback):
       raise ValueError("callback is an invalid type (%s) - callback must derive from LocomatixCallback" % type(callback))
     params.update(callback._params)
-    params.update(name_values)
+    params.update(tnvs(name_values))
     super(CreateZoneRequest, self).__init__(params)
 
 
 class ActivateZoneRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['ActivateZone']
   def __init__(self, zoneid, objectid, feed):
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['ActivateZone']
     params = { 'zoneid' : zoneid, 'feed' : feed, 'oid' : objectid }
     super(ActivateZoneRequest, self).__init__(params)
 
 
 class GetZoneRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['GetZone']
   def __init__(self, zoneid, objectid, feed):
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['GetZone']
     params = { 'zoneid' : zoneid, 'oid' : objectid, 'feed' : feed }
     super(GetZoneRequest, self).__init__(params)
 
 
 class ListZonesRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['ListZones']
   def __init__(self, objectid, feed, start_key, fetch_size):
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['ListZones']
     params = { \
       'oid' : objectid, 'feed' : feed, \
       'startkey' : start_key, 'fetchsize' : fetch_size  \
@@ -246,77 +267,78 @@ class ListZonesRequest(LocomatixRequest):
 
 
 class DeactivateZoneRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['DeactivateZone']
   def __init__(self, zoneid, objectid, feed):
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['DeactivateZone']
     params = { 'zoneid' : zoneid, 'feed' : feed, 'oid' : objectid }
     super(DeactivateZoneRequest, self).__init__(params)
 
 
 class DeleteZoneRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['DeleteZone']
   def __init__(self, zoneid, objectid, feed):
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['DeleteZone']
     params = { 'zoneid' : zoneid, 'feed' : feed, 'oid' : objectid }
     super(DeleteZoneRequest, self).__init__(params)
 
 
 class CreateFenceRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['CreateFence']
   def __init__(self, fenceid, region, trigger, callback, predicate, name_values={}, deactivate=False, once=False):
-    params = {  
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['CreateFence']
+    params = dict({  
       'fenceid' : fenceid, 'trigger' : trigger, 'predicate' : predicate \
-    }
-    if once == True:
+    })
+    if once:
       params['onetimealert'] = True 
-    if deactivate == True:
+    if deactivate:
       params['state'] = 'inactive'
     if not isinstance(region, LocomatixRegion):
       raise ValueError("Invalid region type (%s) - region must derive from LocomatixRegion" % type(region))
+
     params.update(region._params)
     if not isinstance(callback, LocomatixCallback):
       raise ValueError("callback is an invalid type (%s) - callback must derive from LocomatixCallback" % type(callback))
     params.update(callback._params)
-    params.update(name_values)
+    params.update(tnvs(name_values))
     super(CreateFenceRequest, self).__init__(params)
 
 
 class ActivateFenceRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['ActivateFence']
   def __init__(self, fenceid):
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['ActivateFence']
     params = { 'fenceid' : fenceid }
     super(ActivateFenceRequest, self).__init__(params)
 
 
 class GetFenceRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['GetFence']
   def __init__(self, fenceid):
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['GetFence']
     params = { 'fenceid' : fenceid }
     super(GetFenceRequest, self).__init__(params)
 
 
 class ListFencesRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['ListFences']
   def __init__(self, start_key, fetch_size):
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['ListFences']
     params = { 'startkey' : start_key, 'fetchsize' : fetch_size }
     super(ListFencesRequest, self).__init__(params)
 
 
 class DeactivateFenceRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['DeactivateFence']
   def __init__(self, fenceid):
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['DeactivateFence']
     params = { 'fenceid' : fenceid }
     super(DeactivateFenceRequest, self).__init__(params)
 
 
 class DeleteFenceRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['DeleteFence']
   def __init__(self, fenceid):
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['DeleteFence']
     params = { 'fenceid' : fenceid }
     super(DeleteFenceRequest, self).__init__(params)
 
 
 class GetLocationHistoryRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['GetLocationHistory']
   def __init__(self, objectid, feed, start_time, end_time, start_key, fetch_size):
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['GetLocationHistory']
     params = { 
       'oid' : objectid, 'feed' : feed, \
       'starttime' : int(start_time), 'endtime' : int(end_time), \
@@ -326,14 +348,35 @@ class GetLocationHistoryRequest(LocomatixRequest):
 
 
 class GetSpaceActivityRequest(LocomatixRequest):
-  METHOD, URI_FORMAT, URI_PARAMS = ROUTE_SIGNATURES['GetSpaceActivity']
   def __init__(self, feed, region, start_time, end_time, start_key, fetch_size):
-    params = { 
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['GetSpaceActivity']
+    params = dict({ 
       'feed' : feed, 'starttime' : int(start_time), 'endtime' : int(end_time), \
       'startkey': start_key, 'fetchsize' : fetch_size
-    }
+    })
     if not isinstance(region, LocomatixRegion):
       raise ValueError("Invalid region type (%s) - region must derive from LocomatixRegion" % type(region))
     params.update(region._params)
     super(GetSpaceActivityRequest, self).__init__(params)
 
+
+class GetHistogramRequest(LocomatixRequest):
+  def __init__(self, feed, bbox, nhslices, nvslices, etime):
+    self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['GetHistogram']
+    params = dict({ 
+      'feed' : feed, 'grid_horizontal_slices' : str(nhslices),  \
+      'grid_vertical_slices' : str(nvslices), 'grid_starttime' : int(etime) \
+    })
+    if not isinstance(bbox, Rectangle):
+      raise ValueError("Invalid region type (%s) - should be a rectangle" % type(bbox))
+
+    cr_low  = str(bbox.sw_lat) + ',' + str(bbox.sw_long) 
+    cr_high = str(bbox.ne_lat) + ',' + str(bbox.ne_long)
+
+    pt_list = '|'.join((cr_low, cr_high))
+    rparams = {
+      'grid_bbox' : pt_list \
+    }
+
+    params.update(rparams)
+    super(GetHistogramRequest, self).__init__(params)

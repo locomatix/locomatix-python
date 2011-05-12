@@ -3,7 +3,6 @@
 import sys
 import time
 import getopt
-import httplib
 import locomatix
 from threading import Thread
 
@@ -109,8 +108,7 @@ class Car(Thread):
       # First create Locomatix Client with the credentials
       self.conn = locomatix.Client(LOCOMATIX_CUSTID, 
                                    LOCOMATIX_KEY,
-                                   LOCOMATIX_SECRET_KEY,
-                                   LOCOMATIX_HOST)
+                                   LOCOMATIX_SECRET_KEY)
 
       # Create the car object in Locomatix cloud
       self.create(self.carid, self.name, self.license)

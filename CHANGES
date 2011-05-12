@@ -1,0 +1,13 @@
+Changes in Python SDK from the previous version
+
+* Create Feed and Delete Feed - Before inserting object you need to create a feed
+* Support the use of polygons in geofences, search region and space activity 
+* New API - Get histogram that provides aggregate counts of object distribution in a region 
+
+* lx - Command line utility has undergone the following changes
+  * Required arguments will not take options
+  * Time arguments can be specified in user friendly manner in the format mm/dd/yyyy:HH:MM:SS
+    (for commands like update location, get location history, get space activity)
+  * Addition of new command to delete all objects in a feed
+  * Addition of new command to delete all zones of an object
+  * Addition of new command to delete all fences of an object

@@ -20,14 +20,13 @@ import sys
 import locomatix
 from _utils import *
 
-def search_region():
-  """docstring for list_objects"""
+def delete_all_zones():
+  """docstring for list_zones"""
+
   parser = locomatix.ArgsParser()
-  parser.add_description("Finds all objects within a fixed region")
-  parser.add_arg('latitude',  'Latitude of the location')
-  parser.add_arg('longitude', 'Longitude of the location')
-  parser.add_arg('radius',    'Fence radius around the location')
-  parser.add_arg('from-feed', 'Feed to search from')
+  parser.add_description("Gets the details of all zones attached to object")
+  parser.add_arg('objectid','Object attached to the zones')
+  parser.add_arg('feed',    'Name of the feed')
   args = parser.parse_args(sys.argv)
   
   try:
@@ -41,30 +40,20 @@ def search_region():
     sys.exit(1)
   
   try:
-
-    from_feed = args['from-feed']
-    region = locomatix.Circle(float(args['latitude']), float(args['longitude']), float(args['radius']))
-    predicate = lxclient._lql_query(from_feed)
-
-    start_key = locomatix.DEFAULT_FETCH_STARTKEY
-    fetch_size = locomatix.DEFAULT_FETCH_SIZE
-
-    while True:
-      batch = lxclient._request('search_region', region, predicate, start_key, fetch_size)
-      dprint(args, lxclient.response_body(), '\n'.join('%s' % obj for obj in batch.objlocs))
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
+    objectid = args['objectid']
+    feed = args['feed']
+ 
+    for zone in lxclient.list_zones(objectid, feed):
+      lxclient.delete_zone(zone.zoneid, zone.objectid, zone.feed)
+      dprint(args, lxclient.response_body(), None)
 
   except locomatix.LxException, e:
     dprint(args, lxclient.response_body(), \
-         "error: failed to retrieve search region list - %s" % (str(e)))
+        "error: failed to delete all zones for %s in %s - %s" % (objectid, feed, str(e)))
     sys.exit(1)
 
   except KeyboardInterrupt:
     sys.exit(1)
 
-
-
 if __name__ == '__main__':
-  search_region()
+  delete_all_zones()

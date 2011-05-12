@@ -20,19 +20,25 @@ import sys
 import locomatix
 from _utils import *
 
-def list_objects():
-  """docstring for list_objects"""
+def create_feed():
+  """docstring for create_feed"""
   parser = locomatix.ArgsParser()
-  parser.add_description("Gets the details of all objects")
-  parser.add_arg('feed', 'Name of the feed')
+  parser.add_description("Creates a feed")
+  parser.add_arg('feed', 'Feed to be created')
+  parser.add_option('nvpairs','v:', 'nv=',   'Name-value pairs (specified as name=value)', True)
   args = parser.parse_args(sys.argv)
-  
+
+  nvpairs = dict()
+  for anv in args['nvpairs']:
+    nv = anv.split('=')
+    nvpairs[nv[0].strip()] = nv[1].strip()
+
   try:
     lxclient = locomatix.Client(args['custid'], \
-                             args['key'], \
-                             args['secret-key'], \
-                             args['host'], \
-                             args['port'])
+                                args['key'], \
+                                args['secret-key'], \
+                                args['host'], \
+                                args['port'])
   except:
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
@@ -40,22 +46,14 @@ def list_objects():
   feed = args['feed']
 
   try:
-    start_key = locomatix.DEFAULT_FETCH_STARTKEY
-    fetch_size = locomatix.DEFAULT_FETCH_SIZE
-
-    while True:
-      batch = lxclient._request('list_objects', feed, start_key, fetch_size)
-      dprint(args, lxclient.response_body(), '\n'.join('%s' % obj for obj in batch.objects))
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
+    lxclient.create_feed(feed, nvpairs)  
 
   except locomatix.LxException, e:
-    dprint(args, lxclient.response_body(), "error: failed to retrieve object list for (%s) - %s" % (feed, str(e)))
+    dprint(args, lxclient.response_body(), "error: creating feed %s - %s" % (feed, str(e)))
     sys.exit(1)
-    
-  except KeyboardInterrupt:
-    sys.exit(1)
+  
+  dprint(args, lxclient.response_body(), "Successfully created feed: %s" % feed)
+
 
 if __name__ == '__main__':
-  list_objects()
+  create_feed()

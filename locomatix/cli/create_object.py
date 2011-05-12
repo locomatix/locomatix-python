@@ -17,7 +17,6 @@
 #
 ###############################################################################
 import sys
-import httplib
 import locomatix
 from _utils import *
 
@@ -26,10 +25,10 @@ def create_object():
   parser = locomatix.ArgsParser()
   parser.add_description("Creates an object")
   parser.add_arg('objectid', 'Object to be created')
-  parser.add_roption('feed',  'f:', 'feed=', 'Name of the feed')
+  parser.add_arg('feed',     'Name of the feed')
   parser.add_option('nvpairs','v:', 'nv=',   'Name-value pairs (specified as name=value)', True)
-  parser.add_option('lat',   'l:', 'lat=', 'Latitude of the location')
-  parser.add_option('long',  'g:', 'long=', 'Longitude of the location')
+  parser.add_option('latitude',   'l:', 'latitude=', 'Latitude of the location')
+  parser.add_option('longitude',  'g:', 'longitude=', 'Longitude of the location')
   parser.add_option('time',  't:', 'time=', 'Time of the location')
   parser.add_option('ttl',    'u:', 'ttl=', 'TTL - Time validity of the location')
   args = parser.parse_args(sys.argv)
@@ -55,27 +54,36 @@ def create_object():
 
   response = None
 
-  location_given = len(args['lat']) > 0 and len(args['long']) > 0 and len(args['time']) > 0
-  partial_location = len(args['lat']) > 0 or len(args['long']) > 0 or len(args['time']) > 0
+  location_given = len(args['latitude']) > 0 and len(args['longitude']) > 0 and len(args['time']) > 0
+  partial_location = len(args['latitude']) > 0 or len(args['longitude']) > 0 or len(args['time']) > 0
 
-  if location_given == True:
-    latitude =  args['lat'] 
-    longitude =  args['long'] 
-    time =  args['time'] 
+  if location_given:
+    latitude =  args['latitude'] 
+    longitude =  args['longitude'] 
+    time = convert_time(args['time'])
     ttl =  args['ttl'] 
     location = locomatix.Point(latitude, longitude)
-    response = lxclient._create_object(objectid, feed, nvpairs, location, time, ttl)  
-  elif partial_location == True:
+
+    try:
+      lxclient.create_object(objectid, feed, nvpairs, location, time, ttl)  
+
+    except locomatix.LxException, e:
+      dprint(args, response, "error: creating object (%s in %s) - %s" % (objectid, feed, str(e)))
+      sys.exit(1)
+
+  elif partial_location:
     parser.usage(sys.argv)
     sys.exit(1)
+
   else: 
-    response = lxclient._create_object(objectid, feed, nvpairs)
-  
-  if response.status != httplib.OK:
-    dprint(args, response, "error: creating object (%s in %s) - %s" % (args['objectid'], args['feed'], response.message))
-    sys.exit(1)
-  
-  dprint(args, response, "Successfully created object: %s" % args['objectid'])
+    try:
+      lxclient.create_object(objectid, feed, nvpairs)
+
+    except locomatix.LxException, e:
+      dprint(args, lxclient.response_body(), "error: creating object (%s in %s) - %s" % (objectid, feed, str(e)))
+      sys.exit(1)
+
+  dprint(args, lxclient.response_body(), "Successfully created object: %s" % objectid)
 
 
 if __name__ == '__main__':

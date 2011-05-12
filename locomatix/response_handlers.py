@@ -15,22 +15,25 @@
 # limitations under the License.
 #
 ###############################################################################
-import urllib
 from response_objects import *
 from region import *
 from callback import *
 from keys import *
+from exceptions import *
 
 class LxResponseHandler(object):
   def __init__(self):
     self.message = ''
+    self.response_time = 0.0
 
   def handle(self, data):
     self.message = data['Status']
+    self.response_time = data['ExecutionTime']
 
   def createCallback(self, type, params): 
     if type == 'URL':
       return URLCallback(params['CallbackURL'])
+
     elif type == 'ApplePushNotification':
       info = params['ApplePushNotificationInfo']
       return ApplePushCallback(info['Message'], info['Sound'], info['Token'])
@@ -38,8 +41,13 @@ class LxResponseHandler(object):
 
   def createRegion(self, type, params): 
     if type == 'Circle':
-      return Circle(params['Latitude'], params['Longitude'], \
-                              params['Radius'])
+      return Circle(params['Latitude'], params['Longitude'], params['Radius'])
+
+    elif type == 'Polygon':
+      points = params['Points']
+      pt_list = [(pt['Latitude'], pt['Longitude']) for pt in points]
+      return Polygon(pt_list)
+
     return None
 
   def createObjectRegion(self, type, params): 
@@ -95,7 +103,7 @@ class StatusResponseHandler(LxResponseHandler):
 class ListFeedsResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
-    self.fences = []
+    self.feeds = []
     self.next_key = None
 
   def handle(self, data):
@@ -110,10 +118,10 @@ class GetAttributesResponseHandler(LxResponseHandler):
     
   def handle(self, data):
     super(GetAttributesResponseHandler, self).handle(data)
-    object = data['Result']['Object']
-    self.object.feed = object['Feed']
-    self.object.objectid = object['ObjectID']
-    self.object.name_values = object.get('NameValues',{})
+    obj = data['Result']['Object']
+    self.object.feed = obj['Feed']
+    self.object.objectid = obj['ObjectID']
+    self.object.name_values = obj.get('NameValues',{})
 
 class ListObjectsResponseHandler(LxResponseHandler):
   def __init__(self):
@@ -125,46 +133,42 @@ class ListObjectsResponseHandler(LxResponseHandler):
     super(ListObjectsResponseHandler, self).handle(data)
     self.next_key = data['Result'].get('NextKey')
     for robject in data['Result']['Objects']:
-      object = LxObject()
-      object.feed = robject['Feed']
-      object.objectid = robject['ObjectID']
-      object.name_values = robject.get('NameValues', {})
-      self.objects.append(object)
+      obj = LxObject()
+      obj.feed = robject['Feed']
+      obj.objectid = robject['ObjectID']
+      obj.name_values = robject.get('NameValues', {})
+      self.objects.append(obj)
 
 class GetLocationResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
-    self.object = LxObject()
-    self.object.location = LxLocation()
+    self.location = LxLocation()
   
   def handle(self, data):
     super(GetLocationResponseHandler, self).handle(data)
     location = data['Result']['Location']
-    self.object.feed = location['Feed']
-    self.object.objectid = location['ObjectID']
-    self.object.location.longitude = float(location['Longitude'])
-    self.object.location.latitude = float(location['Latitude'])
-    self.object.location.time = int(location['Time'])
-    self.object.location.name_values = location.get('NameValues', {})
+    self.location.longitude = float(location['Longitude'])
+    self.location.latitude = float(location['Latitude'])
+    self.location.time = int(location['Time'])
+    self.location.name_values = location.get('NameValues', {})
 
 class SearchResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
-    self.objects = []
+    self.objlocs = []
     self.next_key = None
 
   def handle(self, data):
     super(SearchResponseHandler, self).handle(data)
     self.next_key = data['Result'].get('NextKey')
     for robject in data['Result']['Objects']:
-      object = LxObject()
-      object.location = LxLocation()
-      object.feed = robject['Feed']
-      object.objectid = robject['ObjectID']
+      objloc = LxObjectLocation()
+      objloc.feed = robject['Feed']
+      objloc.objectid = robject['ObjectID']
       rloc = robject['Location']
-      object.location.longitude = rloc['Longitude']
-      object.location.latitude = rloc['Latitude']
-      self.objects.append(object)
+      objloc.longitude = rloc['Longitude']
+      objloc.latitude = rloc['Latitude']
+      self.objlocs.append(objloc)
 
 class GetZoneResponseHandler(LxResponseHandler):
   def __init__(self):
@@ -226,21 +230,38 @@ class GetLocationHistoryResponseHandler(LxResponseHandler):
 class GetSpaceActivityResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
-    self.objects = []
+    self.objlocs = []
     self.next_key = None
 
   def handle(self, data):
     super(GetSpaceActivityResponseHandler, self).handle(data)
     self.next_key = data['Result'].get('NextKey')
     for robject in data['Result']['Activity']:
-      object = LxObject()
-      object.location = LxLocation()
-      object.feed = robject['Feed']
-      object.objectid = robject['ObjectID']
-      object.location.longitude = float(robject['Longitude'])
-      object.location.latitude = float(robject['Latitude'])
-      object.location.time = int(robject['Time'])
-      object.location.name_values = robject.get('NameValues', {})
-      self.objects.append(object)
+      objloc = LxObjectLocation()
+      objloc.feed = robject['Feed']
+      objloc.objectid = robject['ObjectID']
+      objloc.longitude = float(robject['Longitude'])
+      objloc.latitude = float(robject['Latitude'])
+      objloc.time = int(robject['Time'])
+      objloc.name_values = robject.get('NameValues', {})
+      self.objlocs.append(objloc)
 
+class GetHistogramResponseHandler(LxResponseHandler):
+  def __init__(self):
+    LxResponseHandler.__init__(self)
+    self.grid_counts = LxGridCounts()
 
+  def handle(self, data):
+    super(GetHistogramResponseHandler, self).handle(data)
+    self.grid_counts.nhslices = data['Result']['HorizontalSlices']  
+    self.grid_counts.nvslices = data['Result']['VerticalSlices']  
+
+    count = 0
+    grid_row = []
+    for i in data['Result']['ObjectGrid']:
+      grid_row.append(i) 
+      count = count + 1
+      if count % self.grid_counts.nhslices == 0:
+        self.grid_counts.counts.append(grid_row)
+        count = 0
+        grid_row = []

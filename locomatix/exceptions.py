@@ -20,6 +20,9 @@ class LxException(Exception):
   def __init__(self, message):
     self.message = message
 
+  def __str__(self):
+    return self.message
+
 class ConnectionFailure(LxException):
   """Raised when the Client fails to establish a connection with the remote Locomatix server."""
   def __init__(self, parent_exception, host, port):
@@ -44,6 +47,11 @@ class UnknownError(LxException):
   """Raised when the client is unable to recognize the error by the server."""
   def __init__(self):
     super(UnknownError, self).__init__(self.__class__.__name__)
+
+class BadRequest(LxException):
+  """Raised when the request is not valid."""
+  def __init__(self):
+    super(BadRequest, self).__init__(self.__class__.__name__)
 
 class InvalidRequest(LxException):
   """Raised when the request is malformed."""
@@ -245,6 +253,11 @@ class InvalidRadius(LxException):
   def __init__(self):
     super(InvalidRadius, self).__init__(self.__class__.__name__)
 
+class InvalidPolygon(LxException):
+  """Raised when the request has an invalid polygon.""" 
+  def __init__(self):
+    super(InvalidPolygon, self).__init__(self.__class__.__name__)
+
 class InvalidCallbackType(LxException):
   """Raised when the request has an invalid callback type.""" 
   def __init__(self):
@@ -323,14 +336,52 @@ class FenceAlreadyActive(LxException):
 class ZoneAlreadyInactive(LxException):
   """Raised when a zone is already in inactive state."""
   def __init__(self):
-    super(FenceAlreadyInactive, self).__init__(self.__class__.__name__)
+    super(ZoneAlreadyInactive, self).__init__(self.__class__.__name__)
 
 class ZoneAlreadyActive(LxException):
   """Raised when a zone is already in active state."""
   def __init__(self):
     super(ZoneAlreadyActive, self).__init__(self.__class__.__name__)
 
+class InvalidGridBoundingBox(LxException):
+  """Raised when an invalid grid bounding box is provided for heatmap computation."""
+  def __init__(self):
+    super(InvalidGridBoundingBox, self).__init__(self.__class__.__name__)
+
+class InvalidStartKey(LxException):
+  """Raised when an invalid start key is provided for iteration."""
+  def __init__(self):
+    super(InvalidStartKey, self).__init__(self.__class__.__name__)
+
+class InternalSystemError(LxException):
+  """Raised when the server sends internal system error.""" 
+  def __init__(self):
+    super(InternalSystemError, self).__init__(self.__class__.__name__)
+
+class FeedAlreadyExists(LxException):
+  """Raised when a feed already exists."""
+  def __init__(self):
+    super(FeedAlreadyExists, self).__init__(self.__class__.__name__)
+
+class FeedDoesNotExist(LxException):
+  """Raised when a feed does not exist."""
+  def __init__(self):
+    super(FeedDoesNotExist, self).__init__(self.__class__.__name__)
+
+class FeedNotEmpty(LxException):
+  """Raised when a delete feed finds that the feed is not empty."""
+  def __init__(self):
+    super(FeedNotEmpty, self).__init__(self.__class__.__name__)
+
+
+class GEOMIndexError(LxException):
+  pass
+
+class GEOMException(LxException):
+  pass
+
 EXCEPTIONS = {
+  'BadRequest':                  BadRequest, 
   'InvalidRequest':              InvalidRequest, 
   'UnknownRequest':              UnknownRequest,
   'TooBigRequest':               TooBigRequest, 
@@ -373,12 +424,14 @@ EXCEPTIONS = {
   'TooBigRegion':                TooBigRegion,
   'InvalidRegion':               InvalidRegion,
   'InvalidRadius':               InvalidRadius,
+  'InvalidPolygon':              InvalidPolygon,
   'InvalidCallbackType':         InvalidCallbackType,
   'InvalidCallbackURL':          InvalidCallbackURL,
   'InvalidPredicate':            InvalidQuery,
   'InvalidTrigger':              InvalidTrigger,
   'TooBigFetch':                 TooBigFetch,
   'InvalidMimeType':             InvalidMimeType,
+  'InvalidStartKey':             InvalidStartKey,
 
   'ObjectAlreadyExists':         ObjectAlreadyExists,
   'ObjectDoesNotExist':          ObjectDoesNotExist,
@@ -390,5 +443,11 @@ EXCEPTIONS = {
   'FenceAlreadyInActive':        FenceAlreadyInactive,
   'FenceAlreadyActive':          FenceAlreadyActive,
   'ZoneAlreadyInActive':         ZoneAlreadyInactive,
-  'ZoneAlreadyActive':           ZoneAlreadyActive
+  'ZoneAlreadyActive':           ZoneAlreadyActive,
+
+  'FeedAlreadyExists':           FeedAlreadyExists,
+  'FeedDoesNotExist':            FeedDoesNotExist,
+  'FeedNotEmpty':                FeedNotEmpty,
+
+  'InternalSystemError':         InternalSystemError
 }

@@ -17,7 +17,6 @@
 #
 ###############################################################################
 import sys
-import httplib
 import locomatix
 from _utils import *
 
@@ -25,9 +24,9 @@ def activate_zone():
   """docstring for activate_zone."""
   parser = locomatix.ArgsParser()
   parser.add_description("Activates a zone")
-  parser.add_roption('feed','f:', 'feed=', 'Name of the feed')
-  parser.add_roption('objectid','o:', 'objectid=', 'Object attached to zone')
-  parser.add_arg('zoneid', 'Zone to be activated')
+  parser.add_arg('zoneid',  'Zone to be activated')
+  parser.add_arg('objectid','Object attached to zone')
+  parser.add_arg('feed',    'Name of the feed')
   args = parser.parse_args(sys.argv)
   
   try:
@@ -43,15 +42,16 @@ def activate_zone():
   zoneid = args['zoneid']
   objectid = args['objectid']
   feed = args['feed']
-  response = lxclient._activate_zone(zoneid, objectid, feed)
+
+  try:
+    lxclient.activate_zone(zoneid, objectid, feed)
   
-  if response.status != httplib.OK:
-    dprint(args, response, "error: activating zone (%s around %s in %s) - %s" % \
-                              (args['zoneid'], args['objectid'], args['feed'], response.message))
+  except locomatix.LxException, e:
+    dprint(args, lxclient.response_body(), "error: activating zone (%s around %s in %s) - %s" % \
+                              (zoneid, objectid, feed, str(e)))
     sys.exit(1)
     
-  dprint(args, response, "Successfully activated zone: %s" % args['zoneid'])
-
+  dprint(args, lxclient.response_body(), "Successfully activated zone: %s" % zoneid)
 
 if __name__ == '__main__':
   activate_zone()

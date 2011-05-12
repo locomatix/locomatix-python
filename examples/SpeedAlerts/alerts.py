@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
 import sys
-import string
 import time
 import socket
-import locomatix
 try: import simplejson as json
 except ImportError: 
   try: import json
@@ -35,8 +33,8 @@ class CarAlertHandler(BaseHTTPRequestHandler):
         self.wfile.write("<HTML>POST OK.<BR><BR></HTML>") 
 
         data = json.loads(self.body['Alert'][0])
-        for object in data['Ingress']:
-          print "%s received alert for speedtrap %s" % (data['ZoneID'], object['ObjectID'])
+        for obj in data['Ingress']:
+          print "%s received alert for speedtrap %s" % (data['ZoneID'], obj['ObjectID'])
     except:
       print "error occurred" 
 

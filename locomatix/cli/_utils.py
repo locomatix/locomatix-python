@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 ###############################################################################
+import time, calendar
 import logging
 from locomatix import logger
 
@@ -22,8 +23,22 @@ log = logging.getLogger('locomatix')
 
 def dprint(args, response, alt_message):
   if args.get('raw'):
-    log.log(logger.RAW, '\nResponse:\n%s' % response.body)
+    log.log(logger.RAW, '\nResponse:\n%s' % response)
   else:
     if alt_message:
       log.info(alt_message)
 
+def convert_time(sometime):
+  if isinstance(sometime, (int, float)):
+    return sometime
+
+  try:
+    stime = int(sometime)
+  except ValueError:
+    try:
+      stime = float(sometime)
+    except ValueError:
+      st = time.strptime(sometime, "%m/%d/%Y:%H:%M:%S")
+      stime = calendar.timegm(st)
+
+  return stime

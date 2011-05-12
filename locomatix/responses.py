@@ -15,8 +15,9 @@
 # limitations under the License.
 #
 ###############################################################################
-import httplib, urllib
+import httplib
 from response_handlers import *
+from exceptions import *
 try: import simplejson as json
 except ImportError: 
   try: import json
@@ -33,31 +34,42 @@ class LocomatixResponse(object):
   need only designate a HANDLER class attribute, then do any relevant instance var assigning
   as necessary in their constructor."""
   HANDLER = None
-  def __init__(self, http_response, *args):
+  def __init__(self, http_response):
     self.status = http_response.status
     self.body = http_response.read()
     self.handler = self.__class__.HANDLER.__class__()
     self.request_signature = None
-    self.message = None
+    self.response_meta = LxResponseMetadata()
+
     if self.status >= httplib.OK:
       data = json.loads(self.body)
-      status = data['Status']
-      if status != 'Success':
-        self.message = status
-      else:
+      self.response_meta.message = data['Status']
+      self.response_meta.response_time = data['ExecutionTime']
+      if self.response_meta.message == 'Success':
         self.handler.handle(data)
-        self.message = self.handler.message
-      self.body = json.dumps(data, indent=4)
+      self.body = data
     else:
-      self.message = http_response.reason
+      self.response_meta.message = http_response.reason
+
+  def get_metadata(self):
+    return self.response_meta
+
+class CreateFeedResponse(LocomatixResponse):
+  HANDLER = StatusResponseHandler()
+
+class DeleteFeedResponse(LocomatixResponse):
+  HANDLER = StatusResponseHandler()
 
 class ListFeedsResponse(LocomatixResponse):
   HANDLER = ListFeedsResponseHandler()
-  def __init__(self, http_response, *args):
+  def __init__(self, http_response):
     super(ListFeedsResponse, self).__init__(http_response)
-    self.next_key = self.handler.next_key
-    self.feeds = self.handler.feeds
-
+    if self.response_meta.message == 'Success':
+       self.next_key = self.handler.next_key
+       self.feeds = self.handler.feeds
+    else:
+       self.next_key = None
+       self.feeds = []
 
 class CreateObjectResponse(LocomatixResponse):
   HANDLER = StatusResponseHandler()
@@ -69,17 +81,24 @@ class DeleteObjectResponse(LocomatixResponse):
 
 class ListObjectsResponse(LocomatixResponse):
   HANDLER = ListObjectsResponseHandler()
-  def __init__(self, http_response, *args):
+  def __init__(self, http_response):
     super(ListObjectsResponse, self).__init__(http_response)
-    self.next_key = self.handler.next_key
-    self.objects = self.handler.objects
+    if self.response_meta.message == 'Success':
+       self.next_key = self.handler.next_key
+       self.objects = self.handler.objects
+    else:
+       self.next_key = None
+       self.objects = []
 
 
 class GetAttributesResponse(LocomatixResponse):
   HANDLER = GetAttributesResponseHandler()
-  def __init__(self, http_response, *args):
+  def __init__(self, http_response):
     super(GetAttributesResponse, self).__init__(http_response)
-    self.object = self.handler.object
+    if self.response_meta.message == 'Success':
+       self.object = self.handler.object
+    else:
+       self.object = None
 
 
 class UpdateAttributesResponse(LocomatixResponse):
@@ -92,25 +111,36 @@ class UpdateLocationResponse(LocomatixResponse):
 
 class GetLocationResponse(LocomatixResponse):
   HANDLER = GetLocationResponseHandler()
-  def __init__(self, http_response, *args):
+  def __init__(self, http_response):
     super(GetLocationResponse, self).__init__(http_response)
-    self.object = self.handler.object
+    if self.response_meta.message == 'Success':
+       self.location = self.handler.location
+    else:
+       self.location = None
 
 
 class SearchNearbyResponse(LocomatixResponse):
   HANDLER = SearchResponseHandler()
-  def __init__(self, http_response, *args):
+  def __init__(self, http_response):
     super(SearchNearbyResponse, self).__init__(http_response)
-    self.objects = self.handler.objects
-    self.next_key = self.handler.next_key
-
+    if self.response_meta.message == 'Success':
+       self.objlocs = self.handler.objlocs
+       self.next_key = self.handler.next_key
+    else:
+       self.objlocs = []
+       self.next_key = None
+       
 
 class SearchRegionResponse(LocomatixResponse):
   HANDLER = SearchResponseHandler()
-  def __init__(self, http_response, *args):
+  def __init__(self, http_response):
     super(SearchRegionResponse, self).__init__(http_response)
-    self.objects = self.handler.objects
-    self.next_key = self.handler.next_key
+    if self.response_meta.message == 'Success':
+       self.objlocs = self.handler.objlocs
+       self.next_key = self.handler.next_key
+    else:
+       self.objlocs = []
+       self.next_key = None
 
 
 class CreateZoneResponse(LocomatixResponse):
@@ -123,17 +153,24 @@ class ActivateZoneResponse(LocomatixResponse):
 
 class GetZoneResponse(LocomatixResponse):
   HANDLER = GetZoneResponseHandler()
-  def __init__(self, http_response, *args):
+  def __init__(self, http_response):
     super(GetZoneResponse, self).__init__(http_response)
-    self.zone  = self.handler.zone
+    if self.response_meta.message == 'Success':
+       self.zone  = self.handler.zone
+    else:
+       self.zone = None
 
 
 class ListZonesResponse(LocomatixResponse):
   HANDLER = ListZonesResponseHandler()
-  def __init__(self, http_response, *args):
+  def __init__(self, http_response):
     super(ListZonesResponse, self).__init__(http_response)
-    self.next_key = self.handler.next_key
-    self.zones  = self.handler.zones
+    if self.response_meta.message == 'Success':
+       self.next_key = self.handler.next_key
+       self.zones  = self.handler.zones
+    else:
+       self.next_key = None
+       self.zones  = None
 
 
 class DeactivateZoneResponse(LocomatixResponse):
@@ -154,17 +191,24 @@ class ActivateFenceResponse(LocomatixResponse):
 
 class GetFenceResponse(LocomatixResponse):
   HANDLER = GetFenceResponseHandler()
-  def __init__(self, http_response, *args):
+  def __init__(self, http_response):
     super(GetFenceResponse, self).__init__(http_response)
-    self.fence  = self.handler.fence
+    if self.response_meta.message == 'Success':
+       self.fence  = self.handler.fence
+    else:
+       self.fence  = None
 
 
 class ListFencesResponse(LocomatixResponse):
   HANDLER = ListFencesResponseHandler()
-  def __init__(self, http_response, *args):
+  def __init__(self, http_response):
     super(ListFencesResponse, self).__init__(http_response)
-    self.next_key = self.handler.next_key
-    self.fences = self.handler.fences
+    if self.response_meta.message == 'Success':
+       self.next_key = self.handler.next_key
+       self.fences = self.handler.fences
+    else:
+       self.next_key = None
+       self.fences = []
 
 
 class DeactivateFenceResponse(LocomatixResponse):
@@ -177,17 +221,33 @@ class DeleteFenceResponse(LocomatixResponse):
 
 class GetLocationHistoryResponse(LocomatixResponse):
   HANDLER = GetLocationHistoryResponseHandler()
-  def __init__(self, http_response, objectid = None, feed = None, *args):
+  def __init__(self, http_response):
     super(GetLocationHistoryResponse, self).__init__(http_response)
-    self.objectid = objectid
-    self.feed = feed
-    self.locations = self.handler.locations
-    self.next_key = self.handler.next_key
+    if self.response_meta.message == 'Success':
+       self.locations = self.handler.locations
+       self.next_key = self.handler.next_key
+    else:
+       self.locations = []
+       self.next_key = None
 
 
 class GetSpaceActivityResponse(LocomatixResponse):
   HANDLER = GetSpaceActivityResponseHandler()
-  def __init__(self, http_response, *args):
+  def __init__(self, http_response):
     super(GetSpaceActivityResponse, self).__init__(http_response)
-    self.objects = self.handler.objects
-    self.next_key = self.handler.next_key
+    if self.response_meta.message == 'Success':
+       self.objlocs = self.handler.objlocs
+       self.next_key = self.handler.next_key
+    else:
+       self.objects = None
+       self.next_key = None
+
+
+class GetHistogramResponse(LocomatixResponse):
+  HANDLER = GetHistogramResponseHandler()
+  def __init__(self, http_response):
+    super(GetHistogramResponse, self).__init__(http_response)
+    if self.response_meta.message == 'Success':
+       self.grid_counts = self.handler.grid_counts
+    else:
+       self.grid_counts = []

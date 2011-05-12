@@ -17,7 +17,6 @@
 #
 ###############################################################################
 import sys
-import httplib
 import locomatix
 from _utils import *
 
@@ -25,9 +24,9 @@ def get_zone():
   """docstring for get_zone"""
   parser = locomatix.ArgsParser()
   parser.add_description("Gets zone details")
-  parser.add_roption('feed','f:', 'feed=', 'Name of the feed')
-  parser.add_roption('objectid','o:', 'objectid=', 'Object attached to zone')
-  parser.add_arg('zoneid', 'Zone to be fetched')
+  parser.add_arg('zoneid',  'Zone to be fetched')
+  parser.add_arg('objectid','Object attached to zone')
+  parser.add_arg('feed',    'Name of the feed')
   args = parser.parse_args(sys.argv)
   
   try:
@@ -43,15 +42,17 @@ def get_zone():
   zoneid = args['zoneid']
   objectid = args['objectid']
   feed = args['feed']
-  response = lxclient._get_zone(zoneid, objectid, feed)
+
+  try:
+    zone = lxclient.get_zone(zoneid, objectid, feed)
   
-  if response.status != httplib.OK:
-    dprint(args, response, "error: getting zone (%s around %s in %s) - %s" % \
-                           (args['zoneid'], args['objectid'], args['feed'], response.message))
+  except locomatix.LxException, e:
+    dprint(args, lxclient.response_body(), \
+        "error: getting zone (%s around %s in %s) - %s" % (zoneid, objectid, feed, str(e)))
     sys.exit(1)
 
   # Print the details of the zone
-  dprint(args, response, '%s' % response.zone)
+  dprint(args, lxclient.response_body(), '%s' % zone)
 
 
 if __name__ == '__main__':

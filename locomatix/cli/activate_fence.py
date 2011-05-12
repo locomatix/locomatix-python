@@ -17,7 +17,6 @@
 #
 ###############################################################################
 import sys
-import httplib
 import locomatix
 from _utils import *
 
@@ -39,13 +38,15 @@ def activate_fence():
     sys.exit(1)
   
   fenceid = args['fenceid']
-  response = lxclient._activate_fence(fenceid)
+
+  try:
+    lxclient.activate_fence(fenceid)
   
-  if response.status != httplib.OK:
-    dprint(args, response, "error: activating fence %s - %s" % (args['fenceid'], response.message))
+  except locomatix.LxException, e:
+    dprint(args, lxclient.response_body(), "error: activating fence %s - %s" % (fenceid, str(e)))
     sys.exit(1)
 
-  dprint(args, response, "Successfully activated fence: %s" % args['fenceid'])
+  dprint(args, lxclient.response_body(), "Successfully activated fence: %s" % fenceid)
 
 
 if __name__ == '__main__':

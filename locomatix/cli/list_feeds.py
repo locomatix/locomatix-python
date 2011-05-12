@@ -17,7 +17,6 @@
 #
 ###############################################################################
 import sys
-import httplib
 import locomatix
 from _utils import *
 
@@ -37,13 +36,23 @@ def list_feeds():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  for batch in lxclient._list_feeds_iterator(allow_error=True):
-    if batch.status > httplib.OK:
-      dprint(args, batch, "error: failed to retrieve feed list - %s" % (batch.message))
-      continue
+  try:
 
-  dprint(args, batch, '\n'.join('%s' % feed for feed in batch.feeds))
+    start_key = locomatix.DEFAULT_FETCH_STARTKEY
+    fetch_size = locomatix.DEFAULT_FETCH_SIZE
+    while True:
+      batch = lxclient._request('list_feeds', start_key, fetch_size)
+      dprint(args, lxclient.response_body(), '\n'.join('%s' % feed for feed in batch.feeds))
+      if batch.next_key == None:
+        break # this is the last batch
+      start_key = batch.next_key
 
+  except locomatix.LxException, e:
+    dprint(args, lxclient.response_body(), "error: failed to retrieve feed list - %s" % (str(e)))
+    sys.exit(1)
+     
+  except KeyboardInterrupt:
+    sys.exit(1)
 
 if __name__ == '__main__':
   list_feeds()

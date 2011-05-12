@@ -17,7 +17,6 @@
 #
 ###############################################################################
 import sys
-import httplib
 import locomatix
 from _utils import *
 
@@ -25,8 +24,8 @@ def delete_object():
   """docstring for delete_object"""
   parser = locomatix.ArgsParser()
   parser.add_description("Deletes an object")
-  parser.add_roption('feed','f:', 'feed=', 'Name of the feed')
   parser.add_arg('objectid', 'Object to be deleted')
+  parser.add_arg('feed',     'Name of the feed')
   args = parser.parse_args(sys.argv)
   
   try:
@@ -41,14 +40,15 @@ def delete_object():
   
   objectid = args['objectid']
   feed     = args['feed']
-  raw = args['raw']
-  response = lxclient._delete_object(objectid, feed)
+
+  try:
+    lxclient.delete_object(objectid, feed)
   
-  if response.status != httplib.OK:
-    dprint(args, response, "error: deleting object (%s in %s) - %s" % (args['objectid'], args['feed'], response.message))
+  except locomatix.LxException, e:
+    dprint(args, lxclient.response_body(), "error: deleting object (%s in %s) - %s" % (objectid, feed, str(e)))
     sys.exit(1)
 
-  dprint(args, response, "Successfully deleted object: %s" % args['objectid'])
+  dprint(args, lxclient.response_body(), "Successfully deleted object: %s" % objectid)
 
 
 if __name__ == '__main__':

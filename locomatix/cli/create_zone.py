@@ -17,7 +17,6 @@
 #
 ###############################################################################
 import sys
-import httplib
 import locomatix
 from _utils import *
 
@@ -25,16 +24,15 @@ def create_zone():
   """docstring for create_zone"""
   parser = locomatix.ArgsParser()
   parser.add_description("Create a zone around an object")
-  parser.add_arg('zoneid', 'Zone to be created')
-  parser.add_roption('feed',  'f:', 'feed=', 'Name of the feed')
-  parser.add_roption('objectid','o:', 'objectid=', 'Object attached to zone')
-  parser.add_roption('radius',  'r:', 'radius=', 'Radius around the object')
-  parser.add_roption('trigger',  't:', 'trigger=', 'Trigger type (Ingress | Egress | IngressAndEgress)')
-  parser.add_roption('callbackURL',  'u:', 'url=', 'Callback URL')
-  parser.add_roption('from-feed','m:', 'from=',  'From feed')
+  parser.add_arg('zoneid',   'Zone to be created')
+  parser.add_arg('objectid', 'Object attached to zone')
+  parser.add_arg('feed',     'Name of the feed')
+  parser.add_arg('radius',   'Radius around the object')
+  parser.add_arg('trigger',  'Trigger type (Ingress | Egress | IngressAndEgress)')
+  parser.add_arg('callbackURL', 'Callback URL')
+  parser.add_arg('from-feed', 'Feed to monitor the objects from')
   parser.add_option('nvpairs','v:', 'nv=',   'Name-value pairs (specified as name=value)', True)
   parser.add_option('once',  'n', 'once', 'Fire the alert only once', type='bool')
-
 
   args = parser.parse_args(sys.argv)
 
@@ -53,24 +51,24 @@ def create_zone():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  zoneid    = args['zoneid']
-  objectid  = args['objectid']
-  feed      = args['feed']
+  zoneid     = args['zoneid']
+  objectid   = args['objectid']
+  feed       = args['feed']
   region     = locomatix.Circle(float(args['radius']))
   trigger    = args['trigger']
   callback   = locomatix.URLCallback(args['callbackURL'])
   from_feed  = args['from-feed']
-  predicate = 'FROM ' + from_feed
-  once = True if args['once'] == True else False
+  once = True if args['once'] else False
 
-  response = lxclient._create_zone(zoneid, objectid, feed, region, trigger, callback, predicate, nvpairs, once)
+  try:
+    lxclient.create_zone(zoneid, objectid, feed, region, trigger, callback, from_feed, nvpairs, once)
   
-  if response.status != httplib.OK:
-    dprint(args, response, "error: creating zone (%s around %s in %s) - %s" % \
-                             (args['zoneid'], args['objectid'], args['feed'], response.message))
+  except locomatix.LxException, e:
+    dprint(args, lxclient.response_body(), "error: creating zone (%s around %s in %s) - %s" % \
+                             (zoneid, objectid, feed, str(e)))
     sys.exit(1)
-  
-  dprint(args, response, "Successfully created zone: %s" % args['zoneid'])
+
+  dprint(args, lxclient.response_body(), "Successfully created zone: %s" % zoneid)
 
 
 if __name__ == '__main__':

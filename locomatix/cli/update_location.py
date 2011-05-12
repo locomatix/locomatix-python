@@ -17,7 +17,6 @@
 #
 ###############################################################################
 import sys
-import httplib
 import locomatix
 from _utils import *
 
@@ -26,25 +25,26 @@ def update_location():
   parser = locomatix.ArgsParser()
   parser.add_description("Update the location of an object")
   parser.add_arg('objectid', 'Object to be updated')
-  parser.add_roption('feed',  'f:', 'feed=', 'Name of the feed')
-  parser.add_roption('lat',   'l:', 'lat=', 'Latitude of the location')
-  parser.add_roption('long',  'g:', 'long=', 'Longitude of the location')
-  parser.add_roption('time',  't:', 'time=', 'Latitude of the location')
+  parser.add_arg('feed',     'Name of the feed')
+  parser.add_arg('latitude', 'Latitude of the location')
+  parser.add_arg('longitude','Longitude of the location')
+  parser.add_arg('time',     'Time at this location')
   parser.add_option('ttl',    'u:', 'ttl=', 'TTL - Time validity of the location')
   parser.add_option('nvpairs','v:', 'nv=',  'Name-value pairs (specified as name=value)', True)
   args = parser.parse_args(sys.argv)
   
-  longitude  = float(args['long'])
-  latitude   = float(args['lat'])
-  time       = long(args['time'])
+  longitude  = float(args['longitude'])
+  latitude   = float(args['latitude'])
+  time       = convert_time(args['time'])
   objectid   = args['objectid']
-  feedid     = args['feed']
+  feed       = args['feed']
+  location   = locomatix.Point(latitude, longitude) 
+
   nvpairs    = dict()
-  
   for anv in args['nvpairs']:
     nv = anv.split('=')
     nvpairs[nv[0].strip()] = nv[1].strip()
-  
+
   ttl = 0 if args['ttl'] == '' else long(args['ttl'])
 
   try:
@@ -57,19 +57,16 @@ def update_location():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  objectid = args['objectid']
-  feed = args['feed']
-
-  location = locomatix.Point(latitude, longitude) 
-  response = lxclient._update_location(objectid, feed, location, time, nvpairs, ttl)
+  try:
+    lxclient.update_location(objectid, feed, location, time, nvpairs, ttl)
   
-  if response.status != httplib.OK:
-    dprint(args, response, "error: updating location for object (%s in %s) - %s" % \
-                            (args['objectid'], args['feed'], response.message))
+  except locomatix.LxException, e:
+    dprint(args, lxclient.response_body(), 
+      "error: updating location for object (%s in %s) - %s" % (objectid, feed, str(e)))
     sys.exit(1)
 
-  dprint(args, response, "Successfully updated location of object: %s" % objectid)
-
+  dprint(args, lxclient.response_body(), \
+            "Successfully updated location of object: %s" % objectid)
 
 if __name__ == '__main__':
   update_location()

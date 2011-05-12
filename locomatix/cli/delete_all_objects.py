@@ -20,14 +20,11 @@ import sys
 import locomatix
 from _utils import *
 
-def search_region():
-  """docstring for list_objects"""
+def delete_all_objects():
+  """docstring for delete_all_objects"""
   parser = locomatix.ArgsParser()
-  parser.add_description("Finds all objects within a fixed region")
-  parser.add_arg('latitude',  'Latitude of the location')
-  parser.add_arg('longitude', 'Longitude of the location')
-  parser.add_arg('radius',    'Fence radius around the location')
-  parser.add_arg('from-feed', 'Feed to search from')
+  parser.add_description("Deletes all the objects in the feed")
+  parser.add_arg('feed', 'Name of the feed')
   args = parser.parse_args(sys.argv)
   
   try:
@@ -40,31 +37,19 @@ def search_region():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
+  feed = args['feed']
+
   try:
-
-    from_feed = args['from-feed']
-    region = locomatix.Circle(float(args['latitude']), float(args['longitude']), float(args['radius']))
-    predicate = lxclient._lql_query(from_feed)
-
-    start_key = locomatix.DEFAULT_FETCH_STARTKEY
-    fetch_size = locomatix.DEFAULT_FETCH_SIZE
-
-    while True:
-      batch = lxclient._request('search_region', region, predicate, start_key, fetch_size)
-      dprint(args, lxclient.response_body(), '\n'.join('%s' % obj for obj in batch.objlocs))
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
-
+    for obj in lxclient.list_objects(feed):
+      lxclient.delete_object(obj.objectid, obj.feed)
+      dprint(args, lxclient.response_body(), None)
+ 
   except locomatix.LxException, e:
-    dprint(args, lxclient.response_body(), \
-         "error: failed to retrieve search region list - %s" % (str(e)))
+    dprint(args, lxclient.response_body(), "error: failed to delete all objects in %s - %s" % (feed, str(e)))
     sys.exit(1)
-
+    
   except KeyboardInterrupt:
     sys.exit(1)
 
-
-
 if __name__ == '__main__':
-  search_region()
+  delete_all_objects()

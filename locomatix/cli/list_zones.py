@@ -17,7 +17,6 @@
 #
 ###############################################################################
 import sys
-import httplib
 import locomatix
 from _utils import *
 
@@ -26,8 +25,8 @@ def list_zones():
 
   parser = locomatix.ArgsParser()
   parser.add_description("Gets the details of all zones attached to object")
-  parser.add_roption('feed','f:', 'feed=', 'Name of the feed')
   parser.add_arg('objectid','Object attached to the zones')
+  parser.add_arg('feed',    'Name of the feed')
   args = parser.parse_args(sys.argv)
   
   try:
@@ -40,15 +39,25 @@ def list_zones():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  objectid = args['objectid']
-  feed = args['feed']
-  for batch in lxclient._list_zones_iterator(objectid, feed, allow_error=True):
-    if batch.status > httplib.OK:
-      dprint(args, batch, "error: failed to retrieve zone list for (%s in %s) - %s" % (objectid, feed, batch.message))
-      continue
+  try:
+    objectid = args['objectid']
+    feed = args['feed']
 
-    dprint(args, batch, '\n'.join('%s' % zone for zone in batch.zones))
+    start_key = locomatix.DEFAULT_FETCH_STARTKEY
+    while True:
+      batch = lxclient._request('list_zones', objectid, feed, start_key)
+      dprint(args, lxclient.response_body(), '\n'.join('%s' % zone for zone in batch.zones))
+      if batch.next_key == None:
+        break # this is the last batch
+      start_key = batch.next_key
 
+  except locomatix.LxException, e:
+    dprint(args, lxclient.response_body(), \
+        "error: failed to retrieve zone list for (%s in %s) - %s" % (objectid, feed, str(e)))
+    sys.exit(1)
+
+  except KeyboardInterrupt:
+    sys.exit(1)
 
 if __name__ == '__main__':
   list_zones()

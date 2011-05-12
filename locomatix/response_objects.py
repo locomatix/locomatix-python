@@ -16,6 +16,8 @@
 #
 ###############################################################################
 
+import time
+
 class PrintableAttributes(object):
   """Base class for all objects returned in locomatix responses."""
   def __str__(self):
@@ -32,6 +34,12 @@ class PrintableAttributes(object):
       del params['_params']
     return str(params)
 
+class LxResponseMetadata(PrintableAttributes):
+  """Represents the metadata returned for the request"""
+  def __init__(self):
+    self.message = ''
+    self.response_time = 0.0
+    self.total_time = 0.0
 
 class LxObject(PrintableAttributes):
   """Represents a locomatix object."""
@@ -39,18 +47,47 @@ class LxObject(PrintableAttributes):
     self.objectid = None
     self.feed = None
     self.name_values = dict()
-    self.location = None
 
 class LxLocation(PrintableAttributes):
   """Represents a locomatix location."""
   def __init__(self):
-    self.objectid = None
-    self.feed = None
-    self.name_values = dict()
     self.longitude = None
     self.latitude = None
     self.time = None
     self.name_values = dict()
+
+  def __str__(self):
+    """Returns a json-like representation of the object"""
+    params = dict()
+    for key, value in self.__dict__.items():
+      if key == 'time' and value != None:
+        t = time.gmtime(int(value))
+        params['time'] = time.strftime("%m/%d/%Y:%H:%M:%S", t)
+      else:
+        params[key] = value
+    return str(params)
+
+class LxObjectLocation(PrintableAttributes):
+  """Represents a locomatix object and its location."""
+  def __init__(self):
+    self.objectid = None
+    self.feed = None
+    self.longitude = None
+    self.latitude = None
+    self.time = None
+    self.name_values = dict()
+
+  def __str__(self):
+    """Returns a json-like representation of the object"""
+    params = dict()
+    for key, value in self.__dict__.items():
+      if key == 'time' and value != None:
+        t = time.gmtime(int(value))
+        params['time'] = time.strftime("%m/%d/%Y:%H:%M:%S", t)
+      else:
+        params[key] = value
+    return str(params)
+
 
 class LxFence(PrintableAttributes):
   """Represents a locomatix fence."""
@@ -77,3 +114,10 @@ class LxZone(PrintableAttributes):
     self.predicate = None
     self.name_values = dict()
     self.state = None
+
+class LxGridCounts(PrintableAttributes):
+  """Represents a locomatix grid count."""
+  def __init__(self):
+    self.nhslices = None
+    self.nvslices = None
+    self.counts = []

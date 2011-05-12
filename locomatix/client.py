@@ -21,22 +21,27 @@ from defaults import *
 from exceptions import *
 import locomatix.logger as logger
 import logging
-import sys
+import sys, time
 major, minor, micro, releaselevel, serial = sys.version_info
 SUPPORT_TIMEOUT = (major >= 2 and minor >= 6)
-
 log = logging.getLogger('locomatix')
 
+lql_detected = False
+try: 
+  import lql 
+  lql_detected = True
+except ImportError:
+  pass
 
-# DEFAULT_LOCOMATIX_VERSION = '0.9'
-# DEFAULT_LOCOMATIX_HOST = 'api.locomatix.com'
-# DEFAULT_LOCOMATIX_PORT = 443
-
-# DEFAULT_FETCH_STARTKEY   = ''
-# DEFAULT_FETCH_START  = 0
-# DEFAULT_FETCH_SIZE  = 20
+try: import simplejson as json
+except ImportError:
+  try: import json
+  except ImportError:
+    raise ImportError("simplejson is not installed. Please download it from http://code.google.com/p/simplejson/")
 
 REQUEST_RESPONSES = {
+  'create_feed':         (CreateFeedRequest,         CreateFeedResponse),
+  'delete_feed':         (DeleteFeedRequest,         DeleteFeedResponse),
   'list_feeds':          (ListFeedsRequest,          ListFeedsResponse),
   'create_object':       (CreateObjectRequest,       CreateObjectResponse),
   'delete_object':       (DeleteObjectRequest,       DeleteObjectResponse),
@@ -61,6 +66,7 @@ REQUEST_RESPONSES = {
   'delete_fence':        (DeleteFenceRequest,        DeleteFenceResponse),
   'get_location_history':(GetLocationHistoryRequest, GetLocationHistoryResponse),
   'get_space_activity':  (GetSpaceActivityRequest,   GetSpaceActivityResponse),
+  'get_histogram':       (GetHistogramRequest,       GetHistogramResponse),
 }
 
 class Client():
@@ -99,11 +105,43 @@ class Client():
     self._timeout = timeout
     self._retry = retry
     self._conn = None
+    self._response_metadata = None
+    self._response_body = None
+    self._total_time = 0.0
     self._open()
   
   def close(self):
     """Closes the connection with the remote Locomatix server."""
     self._conn.close()
+  
+  def response_metadata(self):
+    return self._response_metadata
+
+  def response_body(self):
+    return self._response_body
+
+  def create_feed(self, feed, name_values={}):
+    """Create a feed.
+    
+    Args:
+      feed: The name of the feed
+      name_value: Optional name value pairs associated with the feed
+
+    Return:
+      A CreateFeedResponse object"""
+
+    self._request('create_feed', feed, name_values)
+  
+  def delete_feed(self, feed):
+    """Delete a feed.
+    
+    Args:
+      feed: The name of the feed
+
+    Return:
+      A DeleteFeedResponse object"""
+
+    self._request('delete_feed', feed)
   
   def list_feeds(self, fetch_size=DEFAULT_FETCH_SIZE):
     """Get all the existing feeds for a custid.
@@ -114,7 +152,16 @@ class Client():
 
     Return:
       A ListFeedsResponse object"""
-    return self._list_feeds(fetch_size)
+
+    start_key = DEFAULT_FETCH_STARTKEY
+    while True:
+      batch = self._request('list_feeds', start_key, fetch_size)
+      for feed in batch.feeds:
+        yield feed
+      if batch.next_key == None:
+        break # this is the last batch
+      start_key = batch.next_key
+
   
   def create_object(self, objectid, feed, name_values={}, \
                     location = None, time = 0, ttl=0):
@@ -131,9 +178,7 @@ class Client():
     Return:
       Nothing"""
 
-    response = self._create_object(objectid, feed, name_values, location, time, ttl)
-    if response.status != httplib.OK:
-      raise EXCEPTIONS[response.message]
+    self._request('create_object', objectid, feed, name_values, location, time, ttl)
   
   def delete_object(self, objectid, feed):
     """Delete an object.
@@ -144,10 +189,9 @@ class Client():
     
     Return:
       Nothing"""
-    response = self._delete_object(objectid, feed)
-    if response.status != httplib.OK:
-      raise EXCEPTIONS[response.message]
-  
+
+    self._request('delete_object', objectid, feed)
+
   def list_objects(self, feed, fetch_size=DEFAULT_FETCH_SIZE):
     """List all the objects and its attributes in the feed.
     
@@ -157,8 +201,17 @@ class Client():
         default = 20
     
     Return:
-      A ListObjectsResponse object"""
-    return self._list_objects(feed, fetch_size)
+      An LxObject object"""
+
+    start_key = DEFAULT_FETCH_STARTKEY
+    while True:
+      batch = self._request('list_objects', feed, start_key, fetch_size)
+      for obj in batch.objects:
+        yield obj
+      if batch.next_key == None:
+        break # this is the last batch
+      start_key = batch.next_key
+
  
   def update_attributes(self, objectid, feed, name_values):
     """Update the attributes of an existing object.
@@ -170,10 +223,9 @@ class Client():
     
     Return:
       Nothing"""
-    response = self._update_attributes(objectid, feed, name_values)
-    if response.status != httplib.OK:
-      raise EXCEPTIONS[response.message]
-  
+
+    self._request('update_attributes', objectid, feed, name_values)
+
   def get_attributes(self, objectid, feed):
     """Get the attributes of an existing object.
     
@@ -182,10 +234,9 @@ class Client():
       feed: Feed name that contains the object, required
     
     Return:
-      A GetAttributesResponse object"""
-    response = self._get_attributes(objectid, feed)
-    if response.status != httplib.OK:
-      raise EXCEPTIONS[response.message]
+      A LxObject object"""
+
+    response = self._request('get_attributes', objectid, feed)
     return response.object
   
   def update_location(self, objectid, feed, location, time, 
@@ -202,9 +253,8 @@ class Client():
     
     Return:
       Nothing"""
-    response = self._request('update_location', objectid, feed, location, time, name_values, ttl)
-    if response.status != httplib.OK:
-      raise EXCEPTIONS[response.message]
+
+    self._request('update_location', objectid, feed, location, time, name_values, ttl)
   
   def get_location(self, objectid, feed, allow_expired=False):
     """Get the current location of an object.
@@ -215,11 +265,10 @@ class Client():
       allow_expired: Flag to fetch the expired location if applicable, optional
     
     Return:
-      A GetLocationResponse object"""
+      An LxLocation object"""
+
     response = self._request('get_location', objectid, feed, allow_expired)
-    if response.status != httplib.OK:
-      raise EXCEPTIONS[response.message]
-    return response.object
+    return response.location
   
   def search_nearby(self, objectid, feed, objectregion, \
                           from_feed, fetch_size=DEFAULT_FETCH_SIZE):
@@ -234,10 +283,19 @@ class Client():
         default = 20
     
     Return:
-      A SearchNearbyResponse object"""
-    predicate = 'FROM ' + from_feed
-    return self._search_nearby(objectid, feed, objectregion, \
-                                          predicate, fetch_size)
+      Multiple LxObjectLocation """
+
+    start_key = DEFAULT_FETCH_STARTKEY
+    predicate = self._lql_query(from_feed)
+    while True:
+      batch = self._request('search_nearby', objectid, feed, objectregion, predicate, \
+                                 start_key, fetch_size)
+      for objloc in batch.objlocs:
+        yield objloc
+      if batch.next_key == None:
+        break # this is the last batch
+      start_key = batch.next_key
+
   
   def search_region(self, region, from_feed, \
                         fetch_size=DEFAULT_FETCH_SIZE):
@@ -250,9 +308,17 @@ class Client():
         default = 20
     
     Return:
-      A SearchRegionResponse object"""
-    predicate = 'FROM ' + from_feed
-    return self._search_region(region, predicate, fetch_size)
+      Multiple LxObjectLocation """
+
+    start_key = DEFAULT_FETCH_STARTKEY
+    predicate = self._lql_query(from_feed)
+    while True:
+      batch = self._request('search_region', region, predicate, start_key, fetch_size)
+      for objloc in batch.objlocs:
+        yield objloc
+      if batch.next_key == None:
+        break # this is the last batch
+      start_key = batch.next_key
   
   def create_zone(self, zoneid, objectid, feed, region, \
                   trigger, callback, from_feed, name_values={}, deactivate=False, once=False):
@@ -270,12 +336,10 @@ class Client():
     
     Return:
       Nothing"""
-    predicate = 'FROM ' + from_feed
-    response = self._create_zone(zoneid, objectid, feed, \
-                region, trigger, callback, predicate, name_values, deactivate, once)
-    if response.status != httplib.OK:
-      raise EXCEPTIONS[response.message]
-  
+
+    self._request('create_zone', zoneid, objectid, feed, \
+                       region, trigger, callback, self._lql_query_zone(from_feed), name_values, deactivate, once)
+
   def activate_zone(self, zoneid, objectid, feed):
     """Activate a Zone associated with an object.
     
@@ -286,9 +350,8 @@ class Client():
     
     Return:
       Nothing"""
-    response = self._activate_zone(zoneid, objectid, feed)
-    if response.status != httplib.OK:
-      raise EXCEPTIONS[response.message]
+
+    self._request('activate_zone', zoneid, objectid, feed)
 
   def get_zone(self, zoneid, objectid, feed):
     """Get the Zone definition associated with an object.
@@ -299,10 +362,9 @@ class Client():
       feed: Feed name that contains the object, required
     
     Return:
-      GetZoneResponse object"""
-    response = self._get_zone(zoneid, objectid, feed)
-    if response.status != httplib.OK:
-      raise EXCEPTIONS[response.message]
+       An LxZone object"""
+
+    response = self._request('get_zone', zoneid, objectid, feed)
     return response.zone
   
   def list_zones(self, objectid, feed, fetch_size=DEFAULT_FETCH_SIZE):
@@ -315,8 +377,16 @@ class Client():
         default = 20
     
     Return:
-      A ListZonesResponse object"""
-    return self._list_zones(objectid, feed, fetch_size)
+      Multiple LxZone objects"""
+
+    start_key = DEFAULT_FETCH_STARTKEY
+    while True:
+      batch = self._request('list_zones', objectid, feed, start_key, fetch_size)
+      for zone in batch.zones:
+        yield zone
+      if batch.next_key == None:
+        break # this is the last batch
+      start_key = batch.next_key
   
   def deactivate_zone(self, zoneid, objectid, feed):
     """Deactivate a Zone associated with an object.
@@ -328,10 +398,9 @@ class Client():
     
     Return:
       Nothing"""
-    response = self._deactivate_zone(zoneid, objectid, feed)
-    if response.status != httplib.OK:
-      raise EXCEPTIONS[response.message]
-  
+
+    self._request('deactivate_zone', zoneid, objectid, feed)
+
   def delete_zone(self, zoneid, objectid, feed):
     """Delete a Zone associated with an object.
     
@@ -342,9 +411,8 @@ class Client():
     
     Return:
       Nothing"""
-    response = self._delete_zone(zoneid, objectid, feed)
-    if response.status != httplib.OK:
-      raise EXCEPTIONS[response.message]
+
+    self._request('delete_zone', zoneid, objectid, feed)
   
   def create_fence(self, fenceid, region, trigger,\
                          callback, from_feed, name_values={}, deactivate=False, once=False):
@@ -359,12 +427,10 @@ class Client():
     
     Return:
       Nothing"""
-    predicate = 'FROM ' + from_feed
-    response = self._create_fence(fenceid, region, \
-                         trigger, callback, predicate, name_values, deactivate, once)
-    if response.status != httplib.OK:
-      raise EXCEPTIONS[response.message]
-  
+
+    self._request('create_fence', fenceid, region, \
+          trigger, callback, self._lql_query_fence(from_feed), name_values, deactivate, once)
+
   def activate_fence(self, fenceid):
     """Activate an existing Fence.
     
@@ -372,10 +438,9 @@ class Client():
       fenceid: a unique ID for the new Fence, required
     
     Return:
-      An ActivateFenceResponse object"""
-    response = self._activate_fence(fenceid)
-    if response.status != httplib.OK:
-      raise EXCEPTIONS[response.message]
+      Nothing"""
+
+    self._request('activate_fence', fenceid)
 
   def get_fence(self, fenceid):
     """Get the definition of an existing Fence.
@@ -384,10 +449,9 @@ class Client():
       fenceid: a unique ID for the new Fence, required
     
     Return:
-      A GetFenceResponse object"""
-    response = self._get_fence(fenceid)
-    if response.status != httplib.OK:
-      raise EXCEPTIONS[response.message]
+      A LxFence object"""
+
+    response = self._request('get_fence', fenceid)
     return response.fence
   
   def list_fences(self, fetch_size=DEFAULT_FETCH_SIZE):
@@ -398,8 +462,16 @@ class Client():
         default = 20
 
     Return:
-      A ListFencesResponse object"""
-    return self._list_fences(fetch_size)
+      Multiple LxFence objects"""
+
+    start_key = DEFAULT_FETCH_STARTKEY
+    while True:
+      batch = self._request('list_fences', start_key, fetch_size)
+      for fence in batch.fences:
+        yield fence
+      if batch.next_key == None:
+        break # this is the last batch
+      start_key = batch.next_key
   
   def deactivate_fence(self, fenceid):
     """Deactivate an existing Fence.
@@ -409,10 +481,9 @@ class Client():
     
     Return:
       Nothing"""
-    response = self._deactivate_fence(fenceid)
-    if response.status != httplib.OK:
-      raise EXCEPTIONS[response.message]
-  
+
+    self._request('deactivate_fence', fenceid)
+
   def delete_fence(self, fenceid):
     """Delete an existing Fence.
     
@@ -421,10 +492,9 @@ class Client():
     
     Return:
       Nothing"""
-    response = self._delete_fence(fenceid)
-    if response.status != httplib.OK:
-      raise EXCEPTIONS[response.message]
-  
+
+    self._request('delete_fence', fenceid)
+
   def get_location_history(self, objectid, feed, start_time, end_time, \
                          fetch_size=DEFAULT_FETCH_SIZE):
     """Get the location history of an object.
@@ -438,8 +508,17 @@ class Client():
         default = 20
 
     Return:
-      A GetLocationHistoryResponse object"""
-    return self._get_location_history(objectid, feed, start_time, end_time, fetch_size)
+      Multiple LxLocation """
+
+    start_key = DEFAULT_FETCH_STARTKEY
+    while True:
+      batch = self._request('get_location_history', objectid, feed, start_time, end_time, \
+                                        start_key, fetch_size)
+      for location in batch.locations:
+        yield location
+      if batch.next_key == None:
+        break # this is the last batch
+      start_key = batch.next_key
   
   def get_space_activity(self, feed, region, start_time, end_time, \
                          fetch_size=DEFAULT_FETCH_SIZE):
@@ -454,326 +533,70 @@ class Client():
         default = 20
 
     Return:
-      A GetSpaceActivityResponse object"""
-    return self._get_space_activity(feed, region, start_time, end_time, fetch_size)
+      Multiple LxObjectLocation """
+
+    start_key = DEFAULT_FETCH_STARTKEY
+    while True:
+      batch = self._request('get_space_activity', feed, region, start_time, end_time, \
+                                      start_key, fetch_size)
+      for objloc in batch.objlocs:
+        yield objloc
+      if batch.next_key == None:
+        break # this is the last batch
+      start_key = batch.next_key
   
+  def get_histogram(self, feed, bbox, nhslices, nvslices, etime):
+    """Get the distribution of objects in a space from the given etime
+
+    Args:
+      feed: A feed name, required
+      bbox: A bounding box that specifies the space of interest 
+      nhslices: No. of slices to divide the bbox horizontaly 
+      nvslices: No. of slices to divide the bbox vertically 
+      etime: earliest time of the objects in the space to include
+
+    Return:
+      A list of grid counts"""
+
+    response = self._request('get_histogram', feed, bbox, nhslices, nvslices, etime)
+    return response.grid_counts
+
   #######################################################
   # private methods
   #######################################################
 
-  def _list_feeds(self, fetch_size):
-    start_key = DEFAULT_FETCH_STARTKEY
-    while True:
-      batch = self._request('list_feeds', start_key, fetch_size)
-      if batch.status > httplib.OK:
-        # there was some error or there are no results
-        raise EXCEPTIONS[batch.message]
-      for feed in batch.feeds:
-        yield feed
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
+  def _lql_query(self, sorq):
+    predicate = None
 
-  def _list_feeds_once(self, feedkey, 
-                        start_key=DEFAULT_FETCH_STARTKEY, \
-                        fetch_size=DEFAULT_FETCH_SIZE):
-    return self._request('list_feeds', feedkey, start_key, fetch_size)
+    if isinstance(sorq, str):
+      predicate = 'FROM ' + sorq if len(sorq) > 0 else ''
+    elif lql_detected:
+      if isinstance(sorq, lql.LqlQuery):
+        predicate = sorq._query
 
-  def _list_feeds_iterator(self, fetch_size=DEFAULT_FETCH_SIZE, \
-                            allow_error=False):
-    start_key = DEFAULT_FETCH_STARTKEY
-    while True:
-      batch = self._request('list_feeds', start_key, fetch_size)
-      if not allow_error and (batch.status > httplib.OK or len(batch.feeds) == 0):
-        break # there was some error or there were no results
-      yield batch
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
+    return predicate
 
-  def _create_object(self, objectid, feed, name_values = {}, \
-                          location = None, time = 0, ttl = 0):
-    return self._request('create_object', objectid, feed, name_values, 
-                         location, time, ttl)
-  
-  def _delete_object(self, objectid, feed):
-    return self._request('delete_object', objectid, feed)
+  def _lql_query_fence(self, sorq):
+    predicate = None
 
-  def _list_objects(self, feed, fetch_size = DEFAULT_FETCH_SIZE):
-    start_key = DEFAULT_FETCH_STARTKEY
-    while True:
-      batch = self._request('list_objects', feed, start_key, fetch_size)
-      if batch.status > httplib.OK: 
-        # there was some error or there are no results
-        raise EXCEPTIONS[batch.message]
-      for object in batch.objects:
-        yield object
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
+    if isinstance(sorq, str):
+      predicate = 'FROM ' + sorq if len(sorq) > 0 else ''
+    elif lql_detected:
+      if isinstance(sorq, lql.LqlQueryFence):
+        predicate = sorq._query
 
-  def _list_objects_once(self, feed, 
-                        start_key=DEFAULT_FETCH_STARTKEY, \
-                        fetch_size=DEFAULT_FETCH_SIZE):
-    return self._request('list_objects', feed, start_key, fetch_size)
+    return predicate
 
-  def _list_objects_iterator(self, feed, fetch_size=DEFAULT_FETCH_SIZE, \
-                             allow_error=False):
-    start_key = DEFAULT_FETCH_STARTKEY
-    while True:
-      batch = self._request('list_objects', feed, start_key, fetch_size)
-      if not allow_error and (batch.status > httplib.OK or len(batch.objects) == 0):
-        break # there was some error or there are no results
-      yield batch
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
+  def _lql_query_zone(self, sorq):
+    predicate = None
 
-  def _get_attributes(self, objectid, feed):
-    return self._request('get_attributes', objectid, feed)
-  
-  def _update_attributes(self, objectid, feed, name_values):
-    return self._request('update_attributes', objectid, feed, name_values)
+    if isinstance(sorq, str):
+      predicate = 'FROM ' + sorq if len(sorq) > 0 else ''
+    elif lql_detected:
+      if isinstance(sorq, lql.LqlQueryZone):
+        predicate = sorq._query
 
-  def _get_location(self, objectid, feed, allow_expired = False):
-    return self._request('get_location', objectid, feed, allow_expired)
-
-  def _update_location(self, objectid, feed, location, time, \
-                        name_values = {}, ttl = 0):
-    return self._request('update_location', objectid, feed, location, \
-                       time, name_values, ttl)
-
-  def _search_nearby(self, objectid, feed, region, \
-                      predicate, fetch_size=DEFAULT_FETCH_SIZE):
-    start_key = DEFAULT_FETCH_STARTKEY
-    while True:
-      batch = self._request('search_nearby', objectid, feed, region, predicate, \
-                                 start_key, fetch_size)
-      if batch.status > httplib.OK:
-        # there was some error or there were no results
-        raise EXCEPTIONS[batch.message]
-      for object in batch.objects:
-        yield object
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
-
-
-  def _search_nearby_once(self, objectid, feed, objectregion, \
-                          predicate, \
-                          start_key=DEFAULT_FETCH_STARTKEY, \
-                          fetch_size=DEFAULT_FETCH_SIZE):
-    return self._request('search_nearby', objectid, feed, objectregion, \
-                                          predicate, start_key, fetch_size)
-
-  def _search_nearby_iterator(self, objectid, feed, region, \
-                             predicate, \
-                             fetch_size=DEFAULT_FETCH_SIZE,
-                             allow_error=False):
-    start_key = DEFAULT_FETCH_STARTKEY
-    while True:
-      batch = self._request('search_nearby', objectid, feed, region, predicate, \
-                                 start_key, fetch_size)
-      if not allow_error and (batch.status > httplib.OK or len(batch.objects) == 0):
-        break # there was some error or there were no results
-      yield batch
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
-
-  def _search_region(self, region, predicate, fetch_size=DEFAULT_FETCH_SIZE):
-    start_key = DEFAULT_FETCH_STARTKEY
-    while True:
-      batch = self._request('search_region', region, predicate, start_key, fetch_size)
-      if batch.status > httplib.OK:
-        # there was some error or there were no results
-        raise EXCEPTIONS[batch.message]
-      for object in batch.objects:
-        yield object
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
-
-  def _search_region_once(self, region, \
-                             predicate, \
-                             start_key=DEFAULT_FETCH_STARTKEY, \
-                             fetch_size=DEFAULT_FETCH_SIZE):
-    return self._request('search_region', region, \
-                                          predicate, start_key, fetch_size)
-
-  def _search_region_iterator(self, region, predicate, \
-                                fetch_size=DEFAULT_FETCH_SIZE, \
-                                allow_error=False):
-    start_key = DEFAULT_FETCH_STARTKEY
-    while True:
-      batch = self._request('search_region', region, predicate, start_key, fetch_size)
-      if not allow_error and (batch.status > httplib.OK or len(batch.objects) == 0):
-        break # there was some error or there were no results
-      yield batch
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
-
-  def _create_zone(self, zoneid, objectid, feed, region, \
-                 trigger, callback, predicate, name_values = {}, deactivate=False, once = False):
-    return self._request('create_zone', zoneid, objectid, feed, \
-                       region, trigger, callback, predicate, name_values, deactivate, once)
-  
-  def _activate_zone(self, zoneid, objectid, feed):
-    return self._request('activate_zone', zoneid, objectid, feed)
-
-  def _get_zone(self, zoneid, objectid, feed):
-    return self._request('get_zone', zoneid, objectid, feed)
-  
-  def _list_zones(self, objectid, feed, fetch_size=DEFAULT_FETCH_SIZE):
-    start_key = DEFAULT_FETCH_STARTKEY
-    while True:
-      batch = self._request('list_zones', objectid, feed, start_key, fetch_size)
-      if batch.status > httplib.OK:
-        # there was some error or there were no results
-        raise EXCEPTIONS[batch.message]
-      for zone in batch.zones:
-        yield zone
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
-
-  def _list_zones_once(self, objectid, feed,
-                          start_key=DEFAULT_FETCH_STARTKEY, \
-                          fetch_size=DEFAULT_FETCH_SIZE):
-    return self._request('list_zones', objectid, feed, start_key, fetch_size)
-
-  def _list_zones_iterator(self, objectid, feed,
-                                fetch_size=DEFAULT_FETCH_SIZE,
-                                allow_error=False):
-    start_key = DEFAULT_FETCH_STARTKEY
-    while True:
-      batch = self._request('list_zones', objectid, feed, start_key, fetch_size)
-      if not allow_error and (batch.status > httplib.OK or len(batch.zones) == 0):
-        break # there was some error or there were no results
-      yield batch
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
-
-  def _deactivate_zone(self, zoneid, objectid, feed):
-    return self._request('deactivate_zone', zoneid, objectid, feed)
-  
-  def _delete_zone(self, zoneid, objectid, feed):
-    return self._request('delete_zone', zoneid, objectid, feed)
-  
-  def _create_fence(self, fenceid, region, trigger,\
-                         callback, predicate, name_values = {}, deactivate = False, once = False):
-    return self._request('create_fence', fenceid, region, \
-                             trigger, callback, predicate, name_values, deactivate, once)
-  
-  def _activate_fence(self, fenceid):
-    return self._request('activate_fence', fenceid)
-
-  def _get_fence(self, fenceid):
-    return self._request('get_fence', fenceid)
-  
-  def _list_fences(self, fetch_size=DEFAULT_FETCH_SIZE):
-    start_key = DEFAULT_FETCH_STARTKEY
-    while True:
-      batch = self._request('list_fences', start_key, fetch_size)
-      if batch.status > httplib.OK: 
-        # there was some error or there were no results
-        raise EXCEPTIONS[batch.message]
-      for fence in batch.fences:
-        yield fence
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
-
-  def _list_fences_once(self, start_key=DEFAULT_FETCH_STARTKEY, \
-                        fetch_size=DEFAULT_FETCH_SIZE):
-    return self._request('list_fences', start_key, fetch_size)
-
-  def _list_fences_iterator(self, fetch_size=DEFAULT_FETCH_SIZE, allow_error=False):
-    start_key = DEFAULT_FETCH_STARTKEY
-    while True:
-      batch = self._request('list_fences', start_key, fetch_size)
-      if not allow_error and (batch.status > httplib.OK or len(batch.fences) == 0):
-        break # there was some error or there were no results
-      yield batch
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
-
-  def _deactivate_fence(self, fenceid):
-    return self._request('deactivate_fence', fenceid)
-
-  def _delete_fence(self, fenceid):
-    return self._request('delete_fence', fenceid)
-
-  def _get_location_history(self, objectid, feed, start_time, end_time, 
-                             fetch_size=DEFAULT_FETCH_SIZE):
-    start_key = DEFAULT_FETCH_STARTKEY
-    while True:
-      batch = self._request('get_location_history', objectid, feed, start_time, end_time, \
-                                        start_key, fetch_size)
-      if batch.status > httplib.OK:
-        # there was some error or there were no results
-        raise EXCEPTIONS[batch.message]
-      for location in batch.locations:
-        yield location
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
-
-  def _get_location_history_once(self, objectid, feed, start_time, end_time, \
-                         start_key=DEFAULT_FETCH_STARTKEY, \
-                         fetch_size=DEFAULT_FETCH_SIZE):
-    return self._request('get_location_history', objectid, feed, start_time, \
-                          end_time, start_key, fetch_size)
-
-  def _get_location_history_iterator(self, objectid, feed, start_time, end_time, \
-                             fetch_size=DEFAULT_FETCH_SIZE, allow_error=False):
-    start_key = DEFAULT_FETCH_STARTKEY
-    while True:
-      batch = self._request('get_location_history', objectid, feed, start_time, end_time, \
-                                        start_key, fetch_size)
-      if not allow_error and (batch.status > httplib.OK or len(batch.locations) == 0):
-        break # there was some error or there were no results
-      yield batch
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
-
-  def _get_space_activity(self, feed, region, start_time, end_time, \
-                              fetch_size=DEFAULT_FETCH_SIZE):
-    start_key = DEFAULT_FETCH_STARTKEY
-    while True:
-      batch = self._request('get_space_activity', feed, region, start_time, end_time, \
-                                      start_key, fetch_size)
-      if batch.status > httplib.OK:
-        # there was some error or there were no results
-        raise EXCEPTIONS[batch.message]
-      for object in batch.objects:
-        yield object
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
-
-  def _get_space_activity_once(self, feed, region, start_time, end_time, \
-                         start_key=DEFAULT_FETCH_STARTKEY, \
-                         fetch_size=DEFAULT_FETCH_SIZE):
-    return self._request('get_space_activity', feed, region, start_time, \
-                          end_time, start_key, fetch_size)
-
-  def _get_space_activity_iterator(self, feed, region, start_time, end_time, \
-                              fetch_size=DEFAULT_FETCH_SIZE, allow_error=False):
-    start_key = DEFAULT_FETCH_STARTKEY
-    while True:
-      batch = self._request('get_space_activity', feed, region, start_time, end_time, \
-                                      start_key, fetch_size)
-      if not allow_error and (batch.status > httplib.OK or len(batch.objects) == 0):
-        break # there was some error or there were no results
-      yield batch
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
+    return predicate
 
   def _request(self, request_type, *args):
     Request, Response = REQUEST_RESPONSES[request_type]
@@ -781,20 +604,41 @@ class Client():
     log.log(logger.REQUEST, 'Request:\n%s http://%s:%s%s' % (method, self._host, self._port , uri))
     if body != '':
       log.log(logger.REQUEST, 'body: %s' % body)
+
+    # Note the request start time
+    starttime = time.time()
+
     # try the request response cycle retry times
     for i in range(self._retry):
       try:
         self._conn.request(method, uri, body, self._http_headers)
         http_response = self._conn.getresponse()
       except Exception, ex:
+        self._conn.close()
+        self._open()
         continue
       else:
         # got a response, no connection problems
-        response = Response(http_response, *args)
+        response = Response(http_response)
         response.request_signature = (self._host, self._port, method, uri, body)
-        return response
+
+        # Note the request end time
+        endtime = time.time()
+
+        # Now set the response meta data and response body
+        self._response_metadata = response.get_metadata()
+  
+        # Include the total time - network + server execution
+        response.body['TotalTime'] = str((endtime-starttime)*1000)  
+        self._response_metadata._total_time = str((endtime-starttime)*1000)  
+        self._response_body = json.dumps(response.body, indent=4) 
+
+        if self._response_metadata.message != 'Success': 
+          raise EXCEPTIONS[self._response_metadata.message]
+        return response 
 
     # request/response cycle failed after retries
+    self._response_metadata = None
     raise RequestFailed(ex, self._host, self._port, self.__class__.__name__)
   
   def _open(self):
@@ -804,15 +648,9 @@ class Client():
     else:
       self._conn = httplib.HTTPSConnection(self._host, self._port)
 
-    # try to connect retry times
-    for i in range(self._retry):
-      try:
-        self._conn.connect()
-      except Exception, ex:
-        continue
-      else:
-        return # the connection was successful
-    # connection could not be made after retries
-    raise ConnectionFailure(ex, self._host, self._port)
+    try:
+      self._conn.connect()
+    except Exception, ex:
+      raise ConnectionFailure(ex, self._host, self._port)
 
-
+    return # the connection was successful

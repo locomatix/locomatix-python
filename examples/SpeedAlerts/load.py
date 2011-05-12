@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import httplib
+import sys
 import time
 import locomatix
 
@@ -18,8 +18,7 @@ class SpeedTraps(object):
     # First create a Locomatix client with the credentials
     self.conn = locomatix.Client(LOCOMATIX_CUSTID,
                                  LOCOMATIX_KEY,
-                                 LOCOMATIX_SECRET_KEY,
-                                 LOCOMATIX_HOST)
+                                 LOCOMATIX_SECRET_KEY)
 
   def tearDown(self):
     self.conn.close() 
@@ -42,7 +41,7 @@ class SpeedTraps(object):
       if data == [] or len(data) < 8:
         continue
 
-      id = data[0]
+      cid = data[0]
       latitude = data[1]
       longitude = data[2]
       nvpairs = { 
@@ -53,12 +52,12 @@ class SpeedTraps(object):
       location = locomatix.Point(latitude, longitude)
 
       try:
-        self.conn.create_object(id, FEED_SPEEDTRAPS, nvpairs, location, time.time());
+        self.conn.create_object(cid, FEED_SPEEDTRAPS, nvpairs, location, time.time());
 
       # Make sure that we have created the object successfully
       except locomatix.LxException, ex:
         print 'unable to create object %s in feed %s - %s' % \
-          (id, FEED_SPEEDTRAPS, ex.message)
+          (cid, FEED_SPEEDTRAPS, ex.message)
 
 if __name__ == '__main__':
 

@@ -17,7 +17,6 @@
 #
 ###############################################################################
 import sys
-import httplib
 import locomatix
 from _utils import *
 
@@ -26,11 +25,11 @@ def update_attributes():
   parser = locomatix.ArgsParser()
   parser.add_description("Update the attributes of an object")
   parser.add_arg('objectid', 'Object to be updated')
-  parser.add_roption('feed',  'f:', 'feed=', 'Name of the feed')
+  parser.add_arg('feed',     'Name of the feed')
   parser.add_option('nvpairs','v:', 'nv=',   'Name-value pairs (specified as name=value)', True)
   args = parser.parse_args(sys.argv)
+
   nvpairs = dict()
-  
   for anv in args['nvpairs']:
     nv = anv.split('=')
     nvpairs[nv[0].strip()] = nv[1].strip()
@@ -47,15 +46,16 @@ def update_attributes():
   
   objectid = args['objectid']
   feed = args['feed']
-  response = lxclient._update_attributes(objectid, feed, nvpairs)
+
+  try:
+    lxclient.update_attributes(objectid, feed, nvpairs)
   
-  if response.status != httplib.OK:
-    dprint(args, response, "error: updating attributes for object (%s in %s) - %s" % \
-                           (args['objectid'], args['feed'], response.message))
+  except locomatix.LxException, e:
+    dprint(args, lxclient.response_body(), \
+      "error: updating attributes for object (%s in %s) - %s" % (objectid, feed, str(e)))
     sys.exit(1)
   
-  dprint(args, response, "Successfully update attributes for object: %s" % args['objectid'])
-
+  dprint(args, lxclient.response_body(), "Successfully update attributes for object: %s" % objectid)
 
 if __name__ == '__main__':
   update_attributes()
