@@ -24,9 +24,9 @@ def deactivate_zone():
   """docstring for deactivate_zone."""
   parser = locomatix.ArgsParser()
   parser.add_description("Deactivates a zone")
-  parser.add_arg('zoneid',  'Zone to be deactivated')
-  parser.add_arg('objectid','Object attached to zone')
   parser.add_arg('feed',    'Name of the feed')
+  parser.add_arg('objectid','Object attached to zone')
+  parser.add_arg('zoneid',  'Zone to be deactivated')
   args = parser.parse_args(sys.argv)
   
   try:

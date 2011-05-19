@@ -2,12 +2,22 @@
 import sys
 import locomatix.cli as cli
 
-
 USAGE_FMT = """Usage: lx <subcommand> [options]
 
-Supported subcommands:
+Feed related subcommands:
 %s
-
+Object related subcommands
+%s
+Location related subcommands
+%s
+Search related subcommands
+%s
+Zone related subcommands
+%s
+Fence related subcommands
+%s
+Analytics related subcommands
+%s
 For help with a particular subcommand
   lx <subcommand> --help
 """
@@ -15,41 +25,42 @@ For help with a particular subcommand
 
 class Subcommand():
   """Holds long/short format names and a function to call to execute the command."""
-  def __init__(self, long_form, short_form, method):
+  def __init__(self, long_form, short_form, group, method):
     self.long_form = long_form
     self.short_form = short_form
+    self.group = group
     self.method = method
 
 SUBCOMMANDS = [
-  Subcommand('create-feed',          'cf',  cli.create_feed),
-  Subcommand('delete-feed',          'df',  cli.delete_feed),
-  Subcommand('list-feeds',           'lf',  cli.list_feeds),
-  Subcommand('create-object',        'co',  cli.create_object),
-  Subcommand('delete-object',        'do',  cli.delete_object),
-  Subcommand('delete-all-objects',   'eo',  cli.delete_all_objects),
-  Subcommand('list-objects',         'lo',  cli.list_objects),
-  Subcommand('update-attributes',    'ua',  cli.update_attributes),
-  Subcommand('get-attributes',       'ga',  cli.get_attributes),
-  Subcommand('update-location',      'ul',  cli.update_location),
-  Subcommand('get-location',         'gl',  cli.get_location),
-  Subcommand('create-zone',          'cz',  cli.create_zone),
-  Subcommand('activate-zone',        'az',  cli.activate_zone),
-  Subcommand('get-zone',             'gz',  cli.get_zone),
-  Subcommand('deactivate-zone',      'tz',  cli.deactivate_zone),
-  Subcommand('delete-zone',          'dz',  cli.delete_zone),
-  Subcommand('delete-all-zones',     'ez',  cli.delete_all_zones),
-  Subcommand('list-zones',           'lz',  cli.list_zones),
-  Subcommand('create-fence',         'cg',  cli.create_fence),
-  Subcommand('activate-fence',       'ag',  cli.activate_fence),
-  Subcommand('get-fence',            'gg',  cli.get_fence),
-  Subcommand('deactivate-fence',     'tg',  cli.deactivate_fence),
-  Subcommand('delete-fence',         'dg',  cli.delete_fence),
-  Subcommand('delete-all-fences',    'eg',  cli.delete_all_fences),
-  Subcommand('list-fences',          'lg',  cli.list_fences),
-  Subcommand('search-region',        'sr',  cli.search_region),
-  Subcommand('search-nearby',        'sn',  cli.search_nearby),
-  Subcommand('get-location-history', 'lh',  cli.get_location_history),
-  Subcommand('get-space-activity',   'sa',  cli.get_space_activity)
+  Subcommand('create-feed',          'cf', 'feed',     cli.create_feed),
+  Subcommand('list-feeds',           'lf', 'feed',     cli.list_feeds),
+  Subcommand('delete-feed',          'df', 'feed',     cli.delete_feed),
+  Subcommand('create-object',        'co', 'object',   cli.create_object),
+  Subcommand('get-attributes',       'ga', 'object',   cli.get_attributes),
+  Subcommand('update-attributes',    'ua', 'object',   cli.update_attributes),
+  Subcommand('list-objects',         'lo', 'object',   cli.list_objects),
+  Subcommand('delete-object',        'do', 'object',   cli.delete_object),
+  Subcommand('delete-all-objects',   'eo', 'object',   cli.delete_all_objects),
+  Subcommand('update-location',      'ul', 'location', cli.update_location),
+  Subcommand('get-location',         'gl', 'location', cli.get_location),
+  Subcommand('search-region',        'sr', 'search',   cli.search_region),
+  Subcommand('search-nearby',        'sn', 'search',   cli.search_nearby),
+  Subcommand('create-zone',          'cz', 'zone',     cli.create_zone),
+  Subcommand('get-zone',             'gz', 'zone',     cli.get_zone),
+  Subcommand('list-zones',           'lz', 'zone',     cli.list_zones),
+  Subcommand('activate-zone',        'az', 'zone',     cli.activate_zone),
+  Subcommand('deactivate-zone',      'tz', 'zone',     cli.deactivate_zone),
+  Subcommand('delete-zone',          'dz', 'zone',     cli.delete_zone),
+  Subcommand('delete-all-zones',     'ez', 'zone',     cli.delete_all_zones),
+  Subcommand('create-fence',         'cg', 'fence',    cli.create_fence),
+  Subcommand('get-fence',            'gg', 'fence',    cli.get_fence),
+  Subcommand('list-fences',          'lg', 'fence',    cli.list_fences),
+  Subcommand('activate-fence',       'ag', 'fence',    cli.activate_fence),
+  Subcommand('deactivate-fence',     'tg', 'fence',    cli.deactivate_fence),
+  Subcommand('delete-fence',         'dg', 'fence',    cli.delete_fence),
+  Subcommand('delete-all-fences',    'eg', 'fence',    cli.delete_all_fences),
+  Subcommand('get-location-history', 'lh', 'analytics',cli.get_location_history),
+  Subcommand('get-space-activity',   'sa', 'analytics',cli.get_space_activity)
 ]
 
 def find_subcommand(subcmd):
@@ -60,12 +71,34 @@ def find_subcommand(subcmd):
 
 def usage():
   """Returns the main usage message for lx, including list of valid subcommands."""
-  supported_subcommands = ""
   fmt = "    %-20s[%s]\n"
-  for subcommand in SUBCOMMANDS:
-    supported_subcommands += fmt % (subcommand.long_form, subcommand.short_form)
-  return USAGE_FMT % supported_subcommands
+  feed_subcommands = ""
+  object_subcommands = ""
+  location_subcommands = ""
+  search_subcommands = ""
+  zone_subcommands = ""
+  fence_subcommands = ""
+  analytics_subcommands = ""
 
+  for subcommand in SUBCOMMANDS:
+    if subcommand.group == 'feed':
+      feed_subcommands += fmt % (subcommand.long_form, subcommand.short_form)
+    if subcommand.group == 'object':
+      object_subcommands += fmt % (subcommand.long_form, subcommand.short_form)
+    if subcommand.group == 'location':
+      location_subcommands += fmt % (subcommand.long_form, subcommand.short_form)
+    if subcommand.group == 'search':
+      search_subcommands += fmt % (subcommand.long_form, subcommand.short_form)
+    if subcommand.group == 'zone':
+      zone_subcommands += fmt % (subcommand.long_form, subcommand.short_form)
+    if subcommand.group == 'fence':
+      fence_subcommands += fmt % (subcommand.long_form, subcommand.short_form)
+    if subcommand.group == 'analytics':
+      analytics_subcommands += fmt % (subcommand.long_form, subcommand.short_form)
+
+  return USAGE_FMT % (feed_subcommands, object_subcommands, location_subcommands, \
+                      search_subcommands, zone_subcommands, fence_subcommands, \
+                      analytics_subcommands)
 
 def main():
   # must provide at least a subcommand

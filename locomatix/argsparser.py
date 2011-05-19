@@ -81,8 +81,8 @@ class ArgsParser:
           self.ropts[option] = [ sopt, hsopt, lopt, hlopt, help, multiple, type]
           self.args[option] = [] if multiple else ''
 
-      def add_arg(self, arg, help):
-          self.pargs.append([arg, help])
+      def add_arg(self, arg, help, multiple=False):
+          self.pargs.append([arg, help, multiple])
 
       def add_description(self, desc):
           self.description = desc
@@ -141,7 +141,13 @@ class ArgsParser:
              sys.exit(1)
 
           ipargs = [x[0] for x in self.pargs]
-          opargs.update(dict(zip(ipargs, args)))
+          for i in xrange(len(ipargs)):
+            if i < len(ipargs) - 1: 
+              opargs[ipargs[i]] = args[i]
+            else:
+              opargs[ipargs[i]] = args[i:] if self.pargs[i][2] else args[i] 
+
+          # opargs.update(dict(zip(ipargs, args)))
           if opargs.get('raw'):
             log.setLevel(logger.RAW)
             log.addFilter(logger.RawResponseFilter())
@@ -151,7 +157,10 @@ class ArgsParser:
           print 'usage:', sysargs[0], '[ARGUMENTS]', 
 
           for i in range(len(self.pargs)):
-              print self.pargs[i][0], 
+              if self.pargs[i][2]:
+                print "%s ..." % (self.pargs[i][0]), 
+              else: 
+                print self.pargs[i][0], 
 
           print '\n\n', self.description, '\n'
 

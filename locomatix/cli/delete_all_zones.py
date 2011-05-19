@@ -25,8 +25,8 @@ def delete_all_zones():
 
   parser = locomatix.ArgsParser()
   parser.add_description("Gets the details of all zones attached to object")
-  parser.add_arg('objectid','Object attached to the zones')
   parser.add_arg('feed',    'Name of the feed')
+  parser.add_arg('objectids','Objects attached to the zones', True)
   args = parser.parse_args(sys.argv)
   
   try:
@@ -39,13 +39,15 @@ def delete_all_zones():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
+  objectids = args['objectids']
+  feed = args['feed']
+
   try:
-    objectid = args['objectid']
-    feed = args['feed']
  
-    for zone in lxclient.list_zones(objectid, feed):
-      lxclient.delete_zone(zone.zoneid, zone.objectid, zone.feed)
-      dprint(args, lxclient.response_body(), None)
+    for objectid in objectids:
+      for zone in lxclient.list_zones(objectid, feed):
+        lxclient.delete_zone(zone.zoneid, zone.objectid, zone.feed)
+        dprint(args, lxclient.response_body(), None)
 
   except locomatix.LxException, e:
     dprint(args, lxclient.response_body(), \

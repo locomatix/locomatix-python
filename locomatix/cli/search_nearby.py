@@ -24,8 +24,8 @@ def search_nearby():
   """docstring for search_nearby"""
   parser = locomatix.ArgsParser()
   parser.add_description("Finds all objects within a region around a given object")
-  parser.add_arg('objectid', 'Object around which to search')
   parser.add_arg('feed',     'Name of the feed of paren object')
+  parser.add_arg('objectid', 'Object around which to search')
   parser.add_arg('radius',   'Radius of search region in meters')
   parser.add_arg('from-feed','Feed to include in search')
   args = parser.parse_args(sys.argv)

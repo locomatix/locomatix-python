@@ -24,8 +24,8 @@ def update_attributes():
   """docstring for update_attributes"""
   parser = locomatix.ArgsParser()
   parser.add_description("Update the attributes of an object")
-  parser.add_arg('objectid', 'Object to be updated')
   parser.add_arg('feed',     'Name of the feed')
+  parser.add_arg('objectid', 'Object to be updated')
   parser.add_option('nvpairs','v:', 'nv=',   'Name-value pairs (specified as name=value)', True)
   args = parser.parse_args(sys.argv)
 

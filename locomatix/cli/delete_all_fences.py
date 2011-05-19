@@ -36,8 +36,6 @@ def delete_all_fences():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  feed = args['feed']
-
   try:
     for fence in lxclient.list_fences(feed):
       lxclient.delete_fence(fence.fenceid)

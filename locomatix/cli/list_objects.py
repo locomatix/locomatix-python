@@ -24,7 +24,7 @@ def list_objects():
   """docstring for list_objects"""
   parser = locomatix.ArgsParser()
   parser.add_description("Gets the details of all objects")
-  parser.add_arg('feed', 'Name of the feed')
+  parser.add_arg('feeds', 'Name of the feeds', True)
   args = parser.parse_args(sys.argv)
   
   try:
@@ -37,18 +37,19 @@ def list_objects():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  feed = args['feed']
+  feeds = args['feeds']
 
   try:
-    start_key = locomatix.DEFAULT_FETCH_STARTKEY
-    fetch_size = locomatix.DEFAULT_FETCH_SIZE
+    for feed in feeds:
+      start_key = locomatix.DEFAULT_FETCH_STARTKEY
+      fetch_size = locomatix.DEFAULT_FETCH_SIZE
 
-    while True:
-      batch = lxclient._request('list_objects', feed, start_key, fetch_size)
-      dprint(args, lxclient.response_body(), '\n'.join('%s' % obj for obj in batch.objects))
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
+      while True:
+        batch = lxclient._request('list_objects', feed, start_key, fetch_size)
+        dprint(args, lxclient.response_body(), '\n'.join('%s' % obj for obj in batch.objects))
+        if batch.next_key == None:
+          break # this is the last batch
+        start_key = batch.next_key
 
   except locomatix.LxException, e:
     dprint(args, lxclient.response_body(), "error: failed to retrieve object list for (%s) - %s" % (feed, str(e)))

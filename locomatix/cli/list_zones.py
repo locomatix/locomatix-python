@@ -24,9 +24,9 @@ def list_zones():
   """docstring for list_zones"""
 
   parser = locomatix.ArgsParser()
-  parser.add_description("Gets the details of all zones attached to object")
-  parser.add_arg('objectid','Object attached to the zones')
+  parser.add_description("Gets information about zones")
   parser.add_arg('feed',    'Name of the feed')
+  parser.add_arg('objectids','Object attached to the zones', True)
   args = parser.parse_args(sys.argv)
   
   try:
@@ -39,17 +39,19 @@ def list_zones():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  try:
-    objectid = args['objectid']
-    feed = args['feed']
+  objectids = args['objectids']
+  feed = args['feed']
 
-    start_key = locomatix.DEFAULT_FETCH_STARTKEY
-    while True:
-      batch = lxclient._request('list_zones', objectid, feed, start_key)
-      dprint(args, lxclient.response_body(), '\n'.join('%s' % zone for zone in batch.zones))
-      if batch.next_key == None:
-        break # this is the last batch
-      start_key = batch.next_key
+  try:
+
+    for objectid in objectids:
+      start_key = locomatix.DEFAULT_FETCH_STARTKEY
+      while True:
+        batch = lxclient._request('list_zones', objectid, feed, start_key)
+        dprint(args, lxclient.response_body(), '\n'.join('%s' % zone for zone in batch.zones))
+        if batch.next_key == None:
+          break # this is the last batch
+        start_key = batch.next_key
 
   except locomatix.LxException, e:
     dprint(args, lxclient.response_body(), \

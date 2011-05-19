@@ -23,8 +23,9 @@ from _utils import *
 def delete_feed():
   """docstring for delete_feed"""
   parser = locomatix.ArgsParser()
-  parser.add_description("Deletes a feed")
-  parser.add_arg('feed', 'Feed to be deleted')
+  parser.add_description("Deletes one or many feeds")
+  parser.add_arg('feeds', 'Feeds to be deleted', True)
+  parser.add_option('robjects',  'r', 'remove', 'Remove the objects in feed', type='bool')
   args = parser.parse_args(sys.argv)
   
   try:
@@ -37,16 +38,28 @@ def delete_feed():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  feed     = args['feed']
-  
+  feeds = args['feeds']
+  robjects = args['robjects']
+
   try:
-    lxclient.delete_feed(feed)
-  
+    for feed in feeds:
+      if robjects:
+        try:
+          for obj in lxclient.list_objects(feed):
+            lxclient.delete_object(obj.objectid, obj.feed)
+            dprint(args, lxclient.response_body(), None)
+
+        except locomatix.LxException, e:
+          dprint(args, lxclient.response_body(), "error: failed to delete objects in %s - %s" % (feed, str(e)))
+          sys.exit(1)
+
+      lxclient.delete_feed(feed)
+
   except locomatix.LxException, e:
     dprint(args, lxclient.response_body(), "error: deleting feed %s - %s" % (feed, str(e)))
     sys.exit(1)
 
-  dprint(args, lxclient.response_body(), "Successfully deleted feed: %s" % feed)
+  dprint(args, lxclient.response_body(), "Successfully deleted feeds: %s" % ' '.join(feeds))
 
 
 if __name__ == '__main__':

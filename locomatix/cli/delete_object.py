@@ -24,8 +24,8 @@ def delete_object():
   """docstring for delete_object"""
   parser = locomatix.ArgsParser()
   parser.add_description("Deletes an object")
-  parser.add_arg('objectid', 'Object to be deleted')
   parser.add_arg('feed',     'Name of the feed')
+  parser.add_arg('objectids', 'Object to be deleted', True)
   args = parser.parse_args(sys.argv)
   
   try:
@@ -38,17 +38,18 @@ def delete_object():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  objectid = args['objectid']
   feed     = args['feed']
+  objectids = args['objectids']
 
   try:
-    lxclient.delete_object(objectid, feed)
+    for objectid in objectids:
+      lxclient.delete_object(objectid, feed)
   
   except locomatix.LxException, e:
     dprint(args, lxclient.response_body(), "error: deleting object (%s in %s) - %s" % (objectid, feed, str(e)))
     sys.exit(1)
 
-  dprint(args, lxclient.response_body(), "Successfully deleted object: %s" % objectid)
+  dprint(args, lxclient.response_body(), "Successfully deleted object: %s" % ' '.join(objectids))
 
 
 if __name__ == '__main__':

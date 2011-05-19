@@ -24,8 +24,8 @@ def get_attributes():
   """docstring for get_attributes"""
   parser = locomatix.ArgsParser()
   parser.add_description("Get the attributes of an object")
-  parser.add_arg('objectid', 'Object to be fetched')
   parser.add_arg('feed',     'Name of the feed')
+  parser.add_arg('objectids', 'Objects to be fetched', True)
   args = parser.parse_args(sys.argv)
   
   try:
@@ -38,19 +38,18 @@ def get_attributes():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  objectid = args['objectid']
-  feed     = args['feed']
+  objectids = args['objectids']
+  feed      = args['feed']
 
   try:
-    obj = lxclient.get_attributes(objectid, feed)
+    for objectid in objectids:
+      obj = lxclient.get_attributes(objectid, feed)
+      dprint(args, lxclient.response_body(), '%s' % obj)
   
   except locomatix.LxException, e:
     dprint(args, lxclient.response_body(), "error: getting attributes for object (%s in %s) - %s" % \
                                     (objectid, feed, str(e)))
     sys.exit(1)
   
-  dprint(args, lxclient.response_body(), '%s' % obj)
-
-
 if __name__ == '__main__':
   get_attributes()

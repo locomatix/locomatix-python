@@ -24,8 +24,8 @@ def update_location():
   """docstring for update_location"""
   parser = locomatix.ArgsParser()
   parser.add_description("Update the location of an object")
-  parser.add_arg('objectid', 'Object to be updated')
   parser.add_arg('feed',     'Name of the feed')
+  parser.add_arg('objectid', 'Object to be updated')
   parser.add_arg('latitude', 'Latitude of the location')
   parser.add_arg('longitude','Longitude of the location')
   parser.add_arg('time',     'Time at this location')

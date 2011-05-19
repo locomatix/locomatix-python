@@ -448,6 +448,7 @@ EXCEPTIONS = {
   'FeedAlreadyExists':           FeedAlreadyExists,
   'FeedDoesNotExist':            FeedDoesNotExist,
   'FeedNotEmpty':                FeedNotEmpty,
+  'InvalidGridBoundingBox':      InvalidGridBoundingBox,
 
   'InternalSystemError':         InternalSystemError
 }

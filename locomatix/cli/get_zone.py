@@ -24,9 +24,9 @@ def get_zone():
   """docstring for get_zone"""
   parser = locomatix.ArgsParser()
   parser.add_description("Gets zone details")
-  parser.add_arg('zoneid',  'Zone to be fetched')
-  parser.add_arg('objectid','Object attached to zone')
   parser.add_arg('feed',    'Name of the feed')
+  parser.add_arg('objectid','Object attached to zone')
+  parser.add_arg('zoneids',  'Zone to be fetched', True)
   args = parser.parse_args(sys.argv)
   
   try:
@@ -39,21 +39,19 @@ def get_zone():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  zoneid = args['zoneid']
+  zoneids = args['zoneids']
   objectid = args['objectid']
   feed = args['feed']
 
   try:
-    zone = lxclient.get_zone(zoneid, objectid, feed)
-  
+    for zoneid in zoneids:
+      zone = lxclient.get_zone(zoneid, objectid, feed)
+      dprint(args, lxclient.response_body(), '%s' % zone)
+
   except locomatix.LxException, e:
     dprint(args, lxclient.response_body(), \
         "error: getting zone (%s around %s in %s) - %s" % (zoneid, objectid, feed, str(e)))
     sys.exit(1)
-
-  # Print the details of the zone
-  dprint(args, lxclient.response_body(), '%s' % zone)
-
 
 if __name__ == '__main__':
   get_zone()

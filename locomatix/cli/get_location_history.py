@@ -24,8 +24,8 @@ def get_location_history():
   """docstring for get_location_history"""
   parser = locomatix.ArgsParser()
   parser.add_description("Gets the location history of an object")
-  parser.add_arg('objectid', 'Object to be created')
   parser.add_arg('feed',  'Name of the feed')
+  parser.add_arg('objectid', 'Object to be created')
   parser.add_option('start-time',  'b:', 'starttime=', 'Start time of the location history')
   parser.add_option('end-time',  'e:', 'endtime=', 'End time of the location history')
   args = parser.parse_args(sys.argv)

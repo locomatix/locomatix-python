@@ -643,8 +643,7 @@ class Client():
   
   def _open(self):
     if SUPPORT_TIMEOUT:
-      self._conn = httplib.HTTPSConnection(self._host, self._port, \
-                                           timeout=self._timeout)
+      self._conn = httplib.HTTPSConnection(self._host, self._port)
     else:
       self._conn = httplib.HTTPSConnection(self._host, self._port)
 

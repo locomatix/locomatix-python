@@ -23,8 +23,8 @@ from _utils import *
 def delete_all_objects():
   """docstring for delete_all_objects"""
   parser = locomatix.ArgsParser()
-  parser.add_description("Deletes all the objects in the feed")
-  parser.add_arg('feed', 'Name of the feed')
+  parser.add_description("Deletes all the objects in one or several feeds")
+  parser.add_arg('feeds', 'Name of the feeds', True)
   args = parser.parse_args(sys.argv)
   
   try:
@@ -37,16 +37,18 @@ def delete_all_objects():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  feed = args['feed']
+  feeds = args['feeds']
 
   try:
-    for obj in lxclient.list_objects(feed):
-      lxclient.delete_object(obj.objectid, obj.feed)
-      dprint(args, lxclient.response_body(), None)
- 
-  except locomatix.LxException, e:
-    dprint(args, lxclient.response_body(), "error: failed to delete all objects in %s - %s" % (feed, str(e)))
-    sys.exit(1)
+    for feed in feeds:
+      try:
+        for obj in lxclient.list_objects(feed):
+          lxclient.delete_object(obj.objectid, obj.feed)
+          dprint(args, lxclient.response_body(), None)
+
+      except locomatix.LxException, e:
+        dprint(args, lxclient.response_body(), "error: failed to delete all objects in %s - %s" % (feed, str(e)))
+        sys.exit(1)
     
   except KeyboardInterrupt:
     sys.exit(1)

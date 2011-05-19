@@ -24,9 +24,9 @@ def create_zone():
   """docstring for create_zone"""
   parser = locomatix.ArgsParser()
   parser.add_description("Create a zone around an object")
-  parser.add_arg('zoneid',   'Zone to be created')
-  parser.add_arg('objectid', 'Object attached to zone')
   parser.add_arg('feed',     'Name of the feed')
+  parser.add_arg('objectid', 'Object attached to zone')
+  parser.add_arg('zoneid',   'Zone to be created')
   parser.add_arg('radius',   'Radius around the object')
   parser.add_arg('trigger',  'Trigger type (Ingress | Egress | IngressAndEgress)')
   parser.add_arg('callbackURL', 'Callback URL')

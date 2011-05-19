@@ -24,7 +24,7 @@ def deactivate_fence():
   """docstring for deactivate_fence"""
   parser = locomatix.ArgsParser()
   parser.add_description("Deactivates a fence")
-  parser.add_arg('fenceid', 'ID of the fence to be deactivated')
+  parser.add_arg('fenceids', 'Fences to be deactivated', True)
   args = parser.parse_args(sys.argv)
   
   try:
@@ -37,16 +37,17 @@ def deactivate_fence():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  fenceid = args['fenceid']
+  fenceids = args['fenceids']
 
   try:
-    lxclient.deactivate_fence(fenceid)
+    for fenceid in fenceids:
+      lxclient.deactivate_fence(fenceid)
   
   except locomatix.LxException, e:
     dprint(args, lxclient.response_body(), "error: deactivating fence %s - %s" % (fenceid, str(e)))
     sys.exit(1)
 
-  dprint(args, lxclient.response_body(), "Successfully deactivated fence: %s" % fenceid)
+  dprint(args, lxclient.response_body(), "Successfully deactivated fence: %s" % ' '.join(fenceids))
 
 
 if __name__ == '__main__':

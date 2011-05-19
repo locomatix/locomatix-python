@@ -24,8 +24,8 @@ def create_object():
   """docstring for create_object"""
   parser = locomatix.ArgsParser()
   parser.add_description("Creates an object")
-  parser.add_arg('objectid', 'Object to be created')
   parser.add_arg('feed',     'Name of the feed')
+  parser.add_arg('objectid', 'Object to be created')
   parser.add_option('nvpairs','v:', 'nv=',   'Name-value pairs (specified as name=value)', True)
   parser.add_option('latitude',   'l:', 'latitude=', 'Latitude of the location')
   parser.add_option('longitude',  'g:', 'longitude=', 'Longitude of the location')

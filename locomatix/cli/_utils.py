@@ -26,7 +26,7 @@ def dprint(args, response, alt_message):
     log.log(logger.RAW, '\nResponse:\n%s' % response)
   else:
     if alt_message:
-      log.info(alt_message)
+      print alt_message
 
 def convert_time(sometime):
   if isinstance(sometime, (int, float)):

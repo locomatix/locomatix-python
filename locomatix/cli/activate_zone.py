@@ -24,9 +24,9 @@ def activate_zone():
   """docstring for activate_zone."""
   parser = locomatix.ArgsParser()
   parser.add_description("Activates a zone")
-  parser.add_arg('zoneid',  'Zone to be activated')
-  parser.add_arg('objectid','Object attached to zone')
   parser.add_arg('feed',    'Name of the feed')
+  parser.add_arg('objectid','Object attached to zone')
+  parser.add_arg('zoneids',  'Zones to be activated', True)
   args = parser.parse_args(sys.argv)
   
   try:
@@ -39,19 +39,20 @@ def activate_zone():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  zoneid = args['zoneid']
-  objectid = args['objectid']
   feed = args['feed']
+  objectid = args['objectid']
+  zoneids = args['zoneids']
 
   try:
-    lxclient.activate_zone(zoneid, objectid, feed)
+    for zoneid in zoneids:
+      lxclient.activate_zone(zoneid, objectid, feed)
   
   except locomatix.LxException, e:
     dprint(args, lxclient.response_body(), "error: activating zone (%s around %s in %s) - %s" % \
                               (zoneid, objectid, feed, str(e)))
     sys.exit(1)
     
-  dprint(args, lxclient.response_body(), "Successfully activated zone: %s" % zoneid)
+  dprint(args, lxclient.response_body(), "Successfully activated zone: %s" % ' '.join(zoneids))
 
 if __name__ == '__main__':
   activate_zone()
