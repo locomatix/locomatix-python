@@ -16,11 +16,7 @@ Sign up for an API Key today here[http://www.locomatix.com/signup], it's free!
 
 = Documentation
 
-More detailed documentation is available here[http://www.locomatix.com/docs/0.9/overview].
-
-= Examples
-
-Some examples of how you can use Locomatix cloud can found in the directory examples/
+There is a lot to learn about the concepts underlying the Locomatix system in order to take full advantage of it.  Complete documentation is available here[http://www.locomatix.com/docs/0.9/overview].
 
 = Command Line Utility
 
@@ -42,6 +38,4 @@ In order to save some tedious typing, _lx_ can read your Locomatix API credentia
 Licensed under the Apache License, Version 2.0.  See LICENSE for details.
 
 Copyright 2010 Locomatix, Inc.
-
-
 

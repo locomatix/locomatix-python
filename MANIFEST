@@ -1,4 +1,4 @@
-README.rdoc
+README
 setup.py
 bin/lx
 locomatix/__init__.py
@@ -24,5 +24,3 @@ locomatix/cli/list_objects.py
 locomatix/cli/list_zones.py
 locomatix/cli/update_attributes.py
 locomatix/cli/update_location.py
-locomatix/cli/search_region.py
-locomatix/cli/search_nearby.py
