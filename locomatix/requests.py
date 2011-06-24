@@ -53,9 +53,15 @@ ROUTE_SIGNATURES = {
 def tnvs(name_values):
   nvs = dict()
   for n, v in name_values.items():
-    nvs[n] = v.encode("utf-8") if isinstance(v, unicode) else v
+    if isinstance(v, list):
+      nl = []
+      for val in v: 
+        vs = val.encode("utf-8") if isinstance(val, unicode) else val
+        nl.append(vs)
+      nvs[n] = nl
+    else:
+      nvs[n] = v.encode("utf-8") if isinstance(v, unicode) else v
   return nvs
-
 
 class LocomatixRequest(object):
   """An abstract request object from which all API requests will be derived.
@@ -100,7 +106,13 @@ class LocomatixRequest(object):
   def _set_body(self):
     """If this is a POST or PUT request, adds params as query string to the body."""
     if self.METHOD in ('POST','PUT'):
-      self._body = urllib.urlencode(self._params)
+      nvseq = []
+      for param, values in self._params.iteritems():
+        if isinstance(values, list):
+          nvseq.extend([(param, value) for value in values])
+        else:
+          nvseq.append((param, values))
+      self._body = urllib.urlencode(nvseq)
     else:
       self._body = self.__class__.EMPTY_BODY
   
@@ -198,7 +210,7 @@ class SearchNearbyRequest(LocomatixRequest):
     self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['SearchNearby']
     params = dict({ 
       'feed' : feed, 'oid' : objectid, \
-      'fetchstart':fetch_start, 'fetchsize':fetch_size, \
+      'startkey':fetch_start, 'fetchsize':fetch_size, \
       'predicate':predicate \
     })
     if not isinstance(region, LocomatixRegion):
@@ -211,7 +223,7 @@ class SearchRegionRequest(LocomatixRequest):
   def __init__(self, region, predicate, fetch_start, fetch_size):
     self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['SearchRegion']
     params = dict({
-      'fetchstart':fetch_start, 'fetchsize':fetch_size, \
+      'startkey':fetch_start, 'fetchsize':fetch_size, \
       'predicate':predicate \
     })
     if not isinstance(region, LocomatixRegion):
@@ -221,7 +233,8 @@ class SearchRegionRequest(LocomatixRequest):
 
 
 class CreateZoneRequest(LocomatixRequest):
-  def __init__(self, zoneid, objectid, feed, region, trigger, callback, predicate, name_values={}, deactivate=False, once=False):
+  def __init__(self, zoneid, objectid, feed, region, trigger, callback, predicate, \
+               name_values={}, deactivate=False, once=False):
     self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['CreateZone']
     params = dict({ 
       'zoneid' : zoneid, 'oid' : objectid, \

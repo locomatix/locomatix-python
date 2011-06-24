@@ -98,7 +98,7 @@ class ArgsParser:
                       [i[2] for i in self.ropts.values()]
 
           try:
-              opts, args = getopt.gnu_getopt(sysargs[1:], all_sopts, all_lopts) 
+              opts, args = getopt.getopt(sysargs[1:], all_sopts, all_lopts) 
               for o, a in opts:
                   for i in range(len(self.oargs)):
                       if o in (self.opts[self.oargs[i]][1], self.opts[self.oargs[i]][3]):

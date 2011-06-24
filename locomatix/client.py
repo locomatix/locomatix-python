@@ -615,6 +615,7 @@ class Client():
         http_response = self._conn.getresponse()
       except Exception, ex:
         self._conn.close()
+        time.sleep(1)
         self._open()
         continue
       else:

@@ -28,6 +28,17 @@ def search_region():
   parser.add_arg('longitude', 'Longitude of the location')
   parser.add_arg('radius',    'Fence radius around the location')
   parser.add_arg('from-feed', 'Feed to search from')
+
+  # Look for the first negative number (if any)
+  for i, arg in enumerate(sys.argv[1:]):
+    if arg[0] != "-": break
+    try:
+      f = float(arg)
+      sys.argv.insert(i+1,"--")
+      break;
+    except ValueError:
+      pass
+
   args = parser.parse_args(sys.argv)
   
   try:
@@ -43,7 +54,11 @@ def search_region():
   try:
 
     from_feed = args['from-feed']
-    region = locomatix.Circle(float(args['latitude']), float(args['longitude']), float(args['radius']))
+    latitude = float(args['latitude'])
+    longitude = float(args['longitude'])
+    radius = float(args['radius'])
+
+    region = locomatix.Circle(latitude, longitude, radius)
     predicate = lxclient._lql_query(from_feed)
 
     start_key = locomatix.DEFAULT_FETCH_STARTKEY

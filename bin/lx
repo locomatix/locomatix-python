@@ -60,7 +60,8 @@ SUBCOMMANDS = [
   Subcommand('delete-fence',         'dg', 'fence',    cli.delete_fence),
   Subcommand('delete-all-fences',    'eg', 'fence',    cli.delete_all_fences),
   Subcommand('get-location-history', 'lh', 'analytics',cli.get_location_history),
-  Subcommand('get-space-activity',   'sa', 'analytics',cli.get_space_activity)
+  Subcommand('get-space-activity',   'sa', 'analytics',cli.get_space_activity),
+  Subcommand('get-histogram',        'hi', 'analytics',cli.get_histogram)
 ]
 
 def find_subcommand(subcmd):

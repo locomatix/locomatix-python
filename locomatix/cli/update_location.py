@@ -40,11 +40,7 @@ def update_location():
   feed       = args['feed']
   location   = locomatix.Point(latitude, longitude) 
 
-  nvpairs    = dict()
-  for anv in args['nvpairs']:
-    nv = anv.split('=')
-    nvpairs[nv[0].strip()] = nv[1].strip()
-
+  nvpairs = form_nvpairs(args['nvpairs'])
   ttl = 0 if args['ttl'] == '' else long(args['ttl'])
 
   try:

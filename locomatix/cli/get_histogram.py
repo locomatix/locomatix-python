@@ -20,17 +20,18 @@ import sys
 import locomatix
 from _utils import *
 
-def update_attributes():
-  """docstring for update_attributes"""
+def get_histogram():
+  """docstring for get_histogram"""
   parser = locomatix.ArgsParser()
-  parser.add_description("Update the attributes of an object")
-  parser.add_arg('feed',     'Name of the feed')
-  parser.add_arg('objectid', 'Object to be updated')
-  parser.add_option('nvpairs','v:', 'nv=',   'Name-value pairs (specified as name=value)', True)
+  parser.add_description("Get counts of objects that in the given region in the given time slice")
+  parser.add_arg('feed',             'Name of the feed')
+  parser.add_arg('latlow',           'Lower latitude of the bounding box')
+  parser.add_arg('longlow',          'Lower longitude of the bounding box')
+  parser.add_arg('lathigh',          'High latitude of the bounding box')
+  parser.add_arg('longhigh',         'High longitude of the bounding box')
+  parser.add_arg('time-interval',    'Number of seconds from now')
   args = parser.parse_args(sys.argv)
-
-  nvpairs = form_nvpairs(args['nvpairs'])
-
+  
   try:
     lxclient = locomatix.Client(args['custid'], \
                              args['key'], \
@@ -41,18 +42,29 @@ def update_attributes():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  objectid = args['objectid']
   feed = args['feed']
+  latlow = float(args['latlow'])
+  longlow = float(args['longlow'])
+  lathigh = float(args['lathigh'])
+  longhigh = float(args['longhigh'])
+  timei = float(args['time-interval'])
+
+  region = locomatix.Rectangle(latlow, longlow, lathigh, longhigh)
 
   try:
-    lxclient.update_attributes(objectid, feed, nvpairs)
-  
+
+    etime = time.time() - timei 
+    counts  = lxclient.get_histogram(feed, region, 50, 50, etime)
+
+    matrix = ''
+    for i in counts.counts:
+      matrix += '%s\n' % str(i) 
+    dprint(args, lxclient.response_body(), '%s' % matrix)
+
   except locomatix.LxException, e:
     dprint(args, lxclient.response_body(), \
-      "error: updating attributes for object (%s in %s) - %s" % (objectid, feed, str(e)))
+      "error: failed to get histogram for feed (%s) - %s" % (feed, str(e)))
     sys.exit(1)
-  
-  dprint(args, lxclient.response_body(), "Successfully update attributes for object: %s" % objectid)
-
+    
 if __name__ == '__main__':
-  update_attributes()
+  get_histogram()

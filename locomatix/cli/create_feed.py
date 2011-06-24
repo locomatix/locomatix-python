@@ -28,10 +28,7 @@ def create_feed():
   parser.add_option('nvpairs','v:', 'nv=',   'Name-value pairs (specified as name=value)', True)
   args = parser.parse_args(sys.argv)
 
-  nvpairs = dict()
-  for anv in args['nvpairs']:
-    nv = anv.split('=')
-    nvpairs[nv[0].strip()] = nv[1].strip()
+  nvpairs = form_nvpairs(args['nvpairs'])
 
   try:
     lxclient = locomatix.Client(args['custid'], \

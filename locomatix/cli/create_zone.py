@@ -35,11 +35,7 @@ def create_zone():
   parser.add_option('once',  'n', 'once', 'Fire the alert only once', type='bool')
 
   args = parser.parse_args(sys.argv)
-
-  nvpairs = dict()
-  for anv in args['nvpairs']:
-    nv = anv.split('=')
-    nvpairs[nv[0].strip()] = nv[1].strip()
+  nvpairs = form_nvpairs(args['nvpairs'])
 
   try:
     lxclient = locomatix.Client(args['custid'], \
@@ -54,9 +50,11 @@ def create_zone():
   zoneid     = args['zoneid']
   objectid   = args['objectid']
   feed       = args['feed']
-  region     = locomatix.Circle(float(args['radius']))
+  radius     = float(args['radius'])
+  region     = locomatix.Circle(radius)
   trigger    = args['trigger']
-  callback   = locomatix.URLCallback(args['callbackURL'])
+  callbackurl= args['callbackURL']
+  callback   = locomatix.URLCallback(callbackurl)
   from_feed  = args['from-feed']
   once = True if args['once'] else False
 

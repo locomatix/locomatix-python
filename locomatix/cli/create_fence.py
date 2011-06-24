@@ -25,8 +25,8 @@ def create_fence():
   parser = locomatix.ArgsParser()
   parser.add_description("Creates a fence")
   parser.add_arg('fenceid',    'Fence to be created')
-  parser.add_arg('latitude',        'Latitude of the location')
-  parser.add_arg('longitude',       'Longitude of the location')
+  parser.add_arg('latitude',   'Latitude of the location')
+  parser.add_arg('longitude',  'Longitude of the location')
   parser.add_arg('radius',     'Fence radius around the location')
   parser.add_arg('trigger',    'Trigger type (Ingress | Egress | IngressAndEgress)')
   parser.add_arg('callbackURL','Callback URL')
@@ -35,11 +35,7 @@ def create_fence():
   parser.add_option('once',  'n', 'once', 'Fire the alert only once', type='bool')
 
   args = parser.parse_args(sys.argv)
-  
-  nvpairs = dict()
-  for anv in args['nvpairs']:
-    nv = anv.split('=')
-    nvpairs[nv[0].strip()] = nv[1].strip()
+  nvpairs = form_nvpairs(args['nvpairs'])
 
   try:
     lxclient = locomatix.Client(args['custid'], \
@@ -52,8 +48,10 @@ def create_fence():
     sys.exit(1)
   
   fenceid    = args['fenceid']
-  region     = locomatix.Circle(float(args['latitude']), float(args['longitude']), \
-                                      float(args['radius']))
+  latitude   = float(args['latitude'])
+  longitude  = float(args['longitude'])
+  radius     = float(args['radius'])
+  region     = locomatix.Circle(latitude, longitude, radius)
   trigger    = args['trigger']
   callback   = locomatix.URLCallback(args['callbackURL'])
   from_feed  = args['from-feed']

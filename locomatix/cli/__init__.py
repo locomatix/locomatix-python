@@ -23,7 +23,7 @@ __all__ = ['create_feed', 'delete_feed', 'list_feeds', \
            'delete_zone', 'delete_all_zones', 'list_zones', \
            'create_fence', 'activate_fence','get_fence','deactivate_fence', \
            'delete_fence', 'delete_all_fences', 'list_fences' \
-           'get_location_history', 'get_space_activity'
+           'get_location_history', 'get_space_activity', 'get_histogram'
 ]
 
 from create_feed import create_feed
@@ -55,3 +55,4 @@ from search_region import search_region
 from search_nearby import search_nearby
 from get_location_history import get_location_history
 from get_space_activity import get_space_activity
+from get_histogram import get_histogram

@@ -42,3 +42,21 @@ def convert_time(sometime):
       stime = calendar.timegm(st)
 
   return stime
+
+def form_nvpairs(argnvpairs):
+  nvpairs = dict()
+  for anv in argnvpairs:
+    nv = anv.split('=')
+    name = nv[0].strip()
+    value = nv[1].strip()
+
+    if name in nvpairs and isinstance(nvpairs[name], list):
+      nvpairs[name].append(value)
+    elif name in nvpairs:
+      nvlist = [nvpairs[name], value]
+      nvpairs[name] = nvlist
+    else:
+      nvpairs[name] = value
+
+  return nvpairs
+

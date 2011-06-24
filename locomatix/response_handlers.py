@@ -30,6 +30,18 @@ class LxResponseHandler(object):
     self.message = data['Status']
     self.response_time = data['ExecutionTime']
 
+  def convertnvpairs(self, jsonarray):
+    rnvpairs = dict()
+    for nvpairs in jsonarray:
+      for name, value in nvpairs.iteritems():
+        if name in rnvpairs and isinstance(rnvpairs[name], list):
+          rnvpairs[name].append(value)
+        elif name in rnvpairs:
+          rnvpairs[name] = [rnvpairs[name], value]
+        else:
+          rnvpairs[name] = value
+    return rnvpairs
+
   def createCallback(self, type, params): 
     if type == 'URL':
       return URLCallback(params['CallbackURL'])
@@ -73,7 +85,7 @@ class LxResponseHandler(object):
 
     zone.feed = follow_object['Feed']
     zone.objectid = follow_object['ObjectID']
-    zone.name_values = rzone.get('NameValues',{})
+    zone.name_values = self.convertnvpairs(rzone.get('NameValues',[]))
     zone.state = rzone['State']
     return zone
 
@@ -92,7 +104,7 @@ class LxResponseHandler(object):
     predicate = rfence['Predicate'].rstrip().split(' ')
     fence.from_feed = predicate[1]
 
-    fence.name_values = rfence.get('NameValues',{})
+    fence.name_values = self.convertnvpairs(rfence.get('NameValues',[]))
     fence.state = rfence['State']
     return fence
 
@@ -121,7 +133,7 @@ class GetAttributesResponseHandler(LxResponseHandler):
     obj = data['Result']['Object']
     self.object.feed = obj['Feed']
     self.object.objectid = obj['ObjectID']
-    self.object.name_values = obj.get('NameValues',{})
+    self.object.name_values = self.convertnvpairs(obj.get('NameValues',[]))
 
 class ListObjectsResponseHandler(LxResponseHandler):
   def __init__(self):
@@ -136,7 +148,7 @@ class ListObjectsResponseHandler(LxResponseHandler):
       obj = LxObject()
       obj.feed = robject['Feed']
       obj.objectid = robject['ObjectID']
-      obj.name_values = robject.get('NameValues', {})
+      obj.name_values = self.convertnvpairs(robject.get('NameValues', []))
       self.objects.append(obj)
 
 class GetLocationResponseHandler(LxResponseHandler):
@@ -150,7 +162,7 @@ class GetLocationResponseHandler(LxResponseHandler):
     self.location.longitude = float(location['Longitude'])
     self.location.latitude = float(location['Latitude'])
     self.location.time = int(location['Time'])
-    self.location.name_values = location.get('NameValues', {})
+    self.location.name_values = self.convertnvpairs(location.get('NameValues', []))
 
 class SearchResponseHandler(LxResponseHandler):
   def __init__(self):
@@ -163,11 +175,12 @@ class SearchResponseHandler(LxResponseHandler):
     self.next_key = data['Result'].get('NextKey')
     for robject in data['Result']['Objects']:
       objloc = LxObjectLocation()
-      objloc.feed = robject['Feed']
-      objloc.objectid = robject['ObjectID']
-      rloc = robject['Location']
+      objloc.feed = robject['ObjectProfile']['Feed']
+      objloc.objectid = robject['ObjectProfile']['ObjectID']
+      rloc = robject['LocationProfile']
       objloc.longitude = rloc['Longitude']
       objloc.latitude = rloc['Latitude']
+      objloc.time = int(rloc['Time'])
       self.objlocs.append(objloc)
 
 class GetZoneResponseHandler(LxResponseHandler):
@@ -224,7 +237,7 @@ class GetLocationHistoryResponseHandler(LxResponseHandler):
       location.longitude = float(rlocation['Longitude'])
       location.latitude = float(rlocation['Latitude'])
       location.time = int(rlocation['Time'])
-      location.name_values = rlocation.get('NameValues', {})
+      location.name_values = self.convertnvpairs(rlocation.get('NameValues', []))
       self.locations.append(location)
     
 class GetSpaceActivityResponseHandler(LxResponseHandler):
@@ -243,7 +256,7 @@ class GetSpaceActivityResponseHandler(LxResponseHandler):
       objloc.longitude = float(robject['Longitude'])
       objloc.latitude = float(robject['Latitude'])
       objloc.time = int(robject['Time'])
-      objloc.name_values = robject.get('NameValues', {})
+      objloc.name_values = self.convertnvpairs(robject.get('NameValues', []))
       self.objlocs.append(objloc)
 
 class GetHistogramResponseHandler(LxResponseHandler):
