@@ -23,6 +23,6 @@ setup(
   url="http://www.locomatix.com",
   author="Locomatix, Inc.",
   author_email="info@locomatix.com",
-  packages=['locomatix','locomatix.cli'],
+  packages=['locomatix','locomatix.cli','locomatix.lql'],
   scripts=['bin/lx']
 )

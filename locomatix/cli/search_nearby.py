@@ -18,6 +18,7 @@
 ###############################################################################
 import sys
 import locomatix
+import locomatix.lql as lql
 from _utils import *
 
 def search_nearby():
@@ -44,13 +45,15 @@ def search_nearby():
     objectid = args['objectid']
     feed = args['feed']
     region = locomatix.Circle(float(args['radius']))
-    predicate = lxclient._lql_query(args['from-feed'])
+    from_feed = args['from-feed']
+
+    predicate = lql.SelectObjectLocation(from_feed)
 
     start_key = locomatix.DEFAULT_FETCH_STARTKEY
     fetch_size = locomatix.DEFAULT_FETCH_SIZE
 
     while True:
-      batch = lxclient._request('search_nearby', objectid, feed, region, predicate, start_key, fetch_size)
+      batch = lxclient._request('search_nearby', objectid, feed, region, predicate._query, start_key, fetch_size)
       dprint(args, lxclient.response_body(), '\n'.join('%s' % obj for obj in batch.objlocs))
       if batch.next_key == None:
         break # this is the last batch

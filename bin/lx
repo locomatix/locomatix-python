@@ -32,36 +32,42 @@ class Subcommand():
     self.method = method
 
 SUBCOMMANDS = [
-  Subcommand('create-feed',          'cf', 'feed',     cli.create_feed),
-  Subcommand('list-feeds',           'lf', 'feed',     cli.list_feeds),
-  Subcommand('delete-feed',          'df', 'feed',     cli.delete_feed),
-  Subcommand('create-object',        'co', 'object',   cli.create_object),
-  Subcommand('get-attributes',       'ga', 'object',   cli.get_attributes),
-  Subcommand('update-attributes',    'ua', 'object',   cli.update_attributes),
-  Subcommand('list-objects',         'lo', 'object',   cli.list_objects),
-  Subcommand('delete-object',        'do', 'object',   cli.delete_object),
-  Subcommand('delete-all-objects',   'eo', 'object',   cli.delete_all_objects),
-  Subcommand('update-location',      'ul', 'location', cli.update_location),
-  Subcommand('get-location',         'gl', 'location', cli.get_location),
-  Subcommand('search-region',        'sr', 'search',   cli.search_region),
-  Subcommand('search-nearby',        'sn', 'search',   cli.search_nearby),
-  Subcommand('create-zone',          'cz', 'zone',     cli.create_zone),
-  Subcommand('get-zone',             'gz', 'zone',     cli.get_zone),
-  Subcommand('list-zones',           'lz', 'zone',     cli.list_zones),
-  Subcommand('activate-zone',        'az', 'zone',     cli.activate_zone),
-  Subcommand('deactivate-zone',      'tz', 'zone',     cli.deactivate_zone),
-  Subcommand('delete-zone',          'dz', 'zone',     cli.delete_zone),
-  Subcommand('delete-all-zones',     'ez', 'zone',     cli.delete_all_zones),
-  Subcommand('create-fence',         'cg', 'fence',    cli.create_fence),
-  Subcommand('get-fence',            'gg', 'fence',    cli.get_fence),
-  Subcommand('list-fences',          'lg', 'fence',    cli.list_fences),
-  Subcommand('activate-fence',       'ag', 'fence',    cli.activate_fence),
-  Subcommand('deactivate-fence',     'tg', 'fence',    cli.deactivate_fence),
-  Subcommand('delete-fence',         'dg', 'fence',    cli.delete_fence),
-  Subcommand('delete-all-fences',    'eg', 'fence',    cli.delete_all_fences),
-  Subcommand('get-location-history', 'lh', 'analytics',cli.get_location_history),
-  Subcommand('get-space-activity',   'sa', 'analytics',cli.get_space_activity),
-  Subcommand('get-histogram',        'hi', 'analytics',cli.get_histogram)
+  Subcommand('create-feed',             'cf', 'feed',      cli.create_feed),
+  Subcommand('list-feeds',              'lf', 'feed',      cli.list_feeds),
+  Subcommand('delete-feed',             'df', 'feed',      cli.delete_feed),
+  Subcommand('create-object',           'co', 'object',    cli.create_object),
+  Subcommand('get-attributes',          'ga', 'object',    cli.get_attributes),
+  Subcommand('update-attributes',       'ua', 'object',    cli.update_attributes),
+  Subcommand('list-objects',            'lo', 'object',    cli.list_objects),
+  Subcommand('query-objects',           'qo', 'object',    cli.query_objects),
+  Subcommand('delete-object',           'do', 'object',    cli.delete_object),
+  Subcommand('delete-all-objects',      'eo', 'object',    cli.delete_all_objects),
+  Subcommand('update-location',         'ul', 'location',  cli.update_location),
+  Subcommand('get-location',            'gl', 'location',  cli.get_location),
+  Subcommand('search-region',           'sr', 'search',    cli.search_region),
+  Subcommand('query-search-region',     'qr', 'search',    cli.query_search_region),
+  Subcommand('search-nearby',           'sn', 'search',    cli.search_nearby),
+  Subcommand('query-search-nearby',     'qn', 'search',    cli.query_search_nearby),
+  Subcommand('create-zone',             'cz', 'zone',      cli.create_zone),
+  Subcommand('get-zone',                'gz', 'zone',      cli.get_zone),
+  Subcommand('list-zones',              'lz', 'zone',      cli.list_zones),
+  Subcommand('activate-zone',           'az', 'zone',      cli.activate_zone),
+  Subcommand('deactivate-zone',         'tz', 'zone',      cli.deactivate_zone),
+  Subcommand('delete-zone',             'dz', 'zone',      cli.delete_zone),
+  Subcommand('delete-all-zones',        'ez', 'zone',      cli.delete_all_zones),
+  Subcommand('create-fence',            'cg', 'fence',     cli.create_fence),
+  Subcommand('get-fence',               'gg', 'fence',     cli.get_fence),
+  Subcommand('list-fences',             'lg', 'fence',     cli.list_fences),
+  Subcommand('activate-fence',          'ag', 'fence',     cli.activate_fence),
+  Subcommand('deactivate-fence',        'tg', 'fence',     cli.deactivate_fence),
+  Subcommand('delete-fence',            'dg', 'fence',     cli.delete_fence),
+  Subcommand('delete-all-fences',       'eg', 'fence',     cli.delete_all_fences),
+  Subcommand('get-location-history',    'lh', 'analytics', cli.get_location_history),
+  Subcommand('query-location-history',  'qh', 'analytics', cli.query_location_history),
+  Subcommand('get-space-activity',      'sa', 'analytics', cli.get_space_activity),
+  Subcommand('query-space-activity',    'qa', 'analytics', cli.query_space_activity),
+  Subcommand('get-histogram',           'hi', 'analytics', cli.get_histogram),
+  Subcommand('query-histogram',         'qi', 'analytics', cli.query_histogram)
 ]
 
 def find_subcommand(subcmd):
@@ -72,7 +78,7 @@ def find_subcommand(subcmd):
 
 def usage():
   """Returns the main usage message for lx, including list of valid subcommands."""
-  fmt = "    %-20s[%s]\n"
+  fmt = "    %-30s[%s]\n"
   feed_subcommands = ""
   object_subcommands = ""
   location_subcommands = ""

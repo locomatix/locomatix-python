@@ -30,7 +30,6 @@ def create_object():
   parser.add_option('latitude',   'l:', 'latitude=', 'Latitude of the location')
   parser.add_option('longitude',  'g:', 'longitude=', 'Longitude of the location')
   parser.add_option('time',  't:', 'time=', 'Time of the location')
-  parser.add_option('ttl',    'u:', 'ttl=', 'TTL - Time validity of the location')
   args = parser.parse_args(sys.argv)
 
   nvpairs = form_nvpairs(args['nvpairs'])
@@ -56,11 +55,10 @@ def create_object():
     latitude =  args['latitude'] 
     longitude =  args['longitude'] 
     time = convert_time(args['time'])
-    ttl =  args['ttl'] 
     location = locomatix.Point(latitude, longitude)
 
     try:
-      lxclient.create_object(objectid, feed, nvpairs, location, time, ttl)  
+      lxclient.create_object(objectid, feed, nvpairs, location, time)  
 
     except locomatix.LxException, e:
       dprint(args, response, "error: creating object (%s in %s) - %s" % (objectid, feed, str(e)))
@@ -72,6 +70,7 @@ def create_object():
 
   else: 
     try:
+      print "creating object without location"
       lxclient.create_object(objectid, feed, nvpairs)
 
     except locomatix.LxException, e:

@@ -21,14 +21,14 @@ import locomatix
 import locomatix.lql as lql
 from _utils import *
 
-def search_region():
-  """docstring for list_objects"""
+def query_search_region():
+  """docstring for search_region"""
   parser = locomatix.ArgsParser()
   parser.add_description("Finds all objects within a fixed region")
   parser.add_arg('latitude',  'Latitude of the location')
   parser.add_arg('longitude', 'Longitude of the location')
   parser.add_arg('radius',    'Fence radius around the location')
-  parser.add_arg('from-feed-or-query', 'Feed to search or query to execute')
+  parser.add_arg('query',     'LQL query to execute')
 
   # Look for the first negative number (if any)
   for i, arg in enumerate(sys.argv[1:]):
@@ -54,19 +54,14 @@ def search_region():
   
   try:
 
-    from_feed = args['from-feed-or-query']
+    query = args['query']
     latitude = float(args['latitude'])
     longitude = float(args['longitude'])
     radius = float(args['radius'])
 
     region = locomatix.Circle(latitude, longitude, radius)
 
-    predicate = None
-    if from_feed.upper().find(" FROM ") < 0:
-      predicate = lql.SelectObjectLocation(from_feed)
-    else:
-      predicate = lql.Query(from_feed)
-
+    predicate = lql.Query(query)
     start_key = locomatix.DEFAULT_FETCH_STARTKEY
     fetch_size = locomatix.DEFAULT_FETCH_SIZE
 
@@ -89,7 +84,5 @@ def search_region():
   except KeyboardInterrupt:
     sys.exit(1)
 
-
-
 if __name__ == '__main__':
-  search_region()
+  query_search_region()

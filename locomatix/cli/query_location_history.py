@@ -21,27 +21,41 @@ import locomatix
 import locomatix.lql as lql
 from _utils import *
 
-def search_region():
-  """docstring for list_objects"""
+def query_location_history():
+  """docstring for query_location_history"""
   parser = locomatix.ArgsParser()
-  parser.add_description("Finds all objects within a fixed region")
-  parser.add_arg('latitude',  'Latitude of the location')
-  parser.add_arg('longitude', 'Longitude of the location')
-  parser.add_arg('radius',    'Fence radius around the location')
-  parser.add_arg('from-feed-or-query', 'Feed to search or query to execute')
-
-  # Look for the first negative number (if any)
-  for i, arg in enumerate(sys.argv[1:]):
-    if arg[0] != "-": break
-    try:
-      f = float(arg)
-      sys.argv.insert(i+1,"--")
-      break;
-    except ValueError:
-      pass
-
+  parser.add_description("Query the location history of an object")
+  parser.add_arg('query',  'LQL query to execute')
+  parser.add_option('start-time',  'b:', 'starttime=', 'Start time of the location history')
+  parser.add_option('end-time',  'e:', 'endtime=', 'End time of the location history')
   args = parser.parse_args(sys.argv)
   
+  query = args['query']
+
+  try:
+    start_time_present = True if len(args['start-time']) > 0 else False
+    end_time_present = True if len(args['end-time']) > 0 else False
+
+    if start_time_present and end_time_present:
+      end_time = convert_time(args['end-time'])
+      start_time = convert_time(args['start-time'])
+
+    elif start_time_present:
+      start_time = convert_time(args['start-time'])
+      end_time = start_time + 3600
+
+    elif end_time_present:
+      end_time = convert_time(args['end-time'])
+      start_time = end_time - 3600
+
+    else:
+      end_time = time.time()
+      start_time = end_time - 3600
+
+  except ValueError:
+    print "start time or end time not in valid format" 
+    sys.exit(1)
+    
   try:
     lxclient = locomatix.Client(args['custid'], \
                              args['key'], \
@@ -54,27 +68,15 @@ def search_region():
   
   try:
 
-    from_feed = args['from-feed-or-query']
-    latitude = float(args['latitude'])
-    longitude = float(args['longitude'])
-    radius = float(args['radius'])
-
-    region = locomatix.Circle(latitude, longitude, radius)
-
-    predicate = None
-    if from_feed.upper().find(" FROM ") < 0:
-      predicate = lql.SelectObjectLocation(from_feed)
-    else:
-      predicate = lql.Query(from_feed)
-
     start_key = locomatix.DEFAULT_FETCH_STARTKEY
     fetch_size = locomatix.DEFAULT_FETCH_SIZE
+    query = lql.Query(query)._query
 
     while True:
-      batch = lxclient._request('search_region', region, predicate._query, start_key, fetch_size)
-      if len(batch.objlocs) > 0:
-        dprint(args, lxclient.response_body(), '\n'.join('%s' % obj for obj in batch.objlocs))
-      else:
+      batch = lxclient._request('get_location_history', query, start_time, end_time, start_key, fetch_size)
+      if len(batch.locations) > 0:
+        dprint(args, lxclient.response_body(), '\n'.join('%s' % loc for loc in batch.locations))
+      elif len(batch.aggrs) > 0:
         dprint(args, lxclient.response_body(), '\n'.join('%s' % aggr for aggr in batch.aggrs))
 
       if batch.next_key == None:
@@ -83,13 +85,11 @@ def search_region():
 
   except locomatix.LxException, e:
     dprint(args, lxclient.response_body(), \
-         "error: failed to retrieve search region list - %s" % (str(e)))
+            "error: failed to query location history for %s - %s" % (query, str(e)))
     sys.exit(1)
 
   except KeyboardInterrupt:
     sys.exit(1)
 
-
-
 if __name__ == '__main__':
-  search_region()
+  query_location_history()

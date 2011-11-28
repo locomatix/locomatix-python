@@ -25,6 +25,8 @@ def create_feed():
   parser = locomatix.ArgsParser()
   parser.add_description("Creates a feed")
   parser.add_arg('feed', 'Feed to be created')
+  parser.add_arg('delete-after', 'Duration after which to delete objects (in seconds | forever)')
+  parser.add_arg('flush-location', 'Duration after which to flush location to disk (in seconds | foreover)') 
   parser.add_option('nvpairs','v:', 'nv=',   'Name-value pairs (specified as name=value)', True)
   args = parser.parse_args(sys.argv)
 
@@ -41,9 +43,11 @@ def create_feed():
     sys.exit(1)
   
   feed = args['feed']
+  object_expiry = args['delete-after']
+  location_expiry = args['flush-location']
 
   try:
-    lxclient.create_feed(feed, nvpairs)  
+    lxclient.create_feed(feed, object_expiry, location_expiry, nvpairs)  
 
   except locomatix.LxException, e:
     dprint(args, lxclient.response_body(), "error: creating feed %s - %s" % (feed, str(e)))

@@ -46,8 +46,10 @@ def list_zones():
 
     for objectid in objectids:
       start_key = locomatix.DEFAULT_FETCH_STARTKEY
+      fetch_size = locomatix.DEFAULT_FETCH_SIZE
+
       while True:
-        batch = lxclient._request('list_zones', objectid, feed, start_key)
+        batch = lxclient._request('list_zones', objectid, feed, start_key, fetch_size)
         dprint(args, lxclient.response_body(), '\n'.join('%s' % zone for zone in batch.zones))
         if batch.next_key == None:
           break # this is the last batch

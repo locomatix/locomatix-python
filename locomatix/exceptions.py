@@ -428,6 +428,7 @@ EXCEPTIONS = {
   'InvalidCallbackType':         InvalidCallbackType,
   'InvalidCallbackURL':          InvalidCallbackURL,
   'InvalidPredicate':            InvalidQuery,
+  'InvalidQuery':                InvalidQuery,
   'InvalidTrigger':              InvalidTrigger,
   'TooBigFetch':                 TooBigFetch,
   'InvalidMimeType':             InvalidMimeType,

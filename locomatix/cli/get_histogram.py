@@ -18,6 +18,7 @@
 ###############################################################################
 import sys
 import locomatix
+import locomatix.lql as lql
 from _utils import *
 
 def get_histogram():
@@ -54,10 +55,10 @@ def get_histogram():
   try:
 
     etime = time.time() - timei 
-    counts  = lxclient.get_histogram(feed, region, 50, 50, etime)
+    counts  = lxclient.get_histogram(feed, region, 10, 10, etime)
 
     matrix = ''
-    for i in counts.counts:
+    for i in counts.aggregates:
       matrix += '%s\n' % str(i) 
     dprint(args, lxclient.response_body(), '%s' % matrix)
 

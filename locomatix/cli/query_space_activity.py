@@ -21,11 +21,11 @@ import locomatix
 import locomatix.lql as lql
 from _utils import *
 
-def get_space_activity():
-  """docstring for get_space_activity"""
+def query_space_activity():
+  """docstring for query_space_activity"""
   parser = locomatix.ArgsParser()
   parser.add_description("Finds all objects that entered the given region within the given time slice")
-  parser.add_arg('feed',       'Name of the feed')
+  parser.add_arg('query',      'LQL query to execute')
   parser.add_arg('latitude',   'Latitude of the location')
   parser.add_arg('longitude',  'Longitude of the location')
   parser.add_arg('radius',     'Radius of the circle region')
@@ -35,15 +35,15 @@ def get_space_activity():
   
   try:
     lxclient = locomatix.Client(args['custid'], \
-                             args['key'], \
-                             args['secret-key'], \
-                             args['host'], \
-                             args['port'])
+                                args['key'], \
+                                args['secret-key'], \
+                                args['host'], \
+                                args['port'])
   except:
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
-  feed = args['feed']
+  query = args['query']
   region = locomatix.Circle(float(args['latitude']), float(args['longitude']), float(args['radius']))
 
   try:
@@ -73,19 +73,22 @@ def get_space_activity():
   try:
     start_key = locomatix.DEFAULT_FETCH_STARTKEY
     fetch_size = locomatix.DEFAULT_FETCH_SIZE
-
-    query = lql.SelectLocation(feed)
+    query = lql.Query(query)._query
 
     while True:
-      batch = lxclient._request('get_space_activity', query._query, region, start_time, end_time, start_key, fetch_size)
-      dprint(args, lxclient.response_body(), '\n'.join('%s' % obj for obj in batch.objlocs)) 
+      batch = lxclient._request('get_space_activity', query, region, start_time, end_time, start_key, fetch_size)
+      if len(batch.objlocs) > 0:
+        dprint(args, lxclient.response_body(), '\n'.join('%s' % objloc for objloc in batch.objlocs)) 
+      elif len(batch.aggrs) > 0:
+        dprint(args, lxclient.response_body(), '\n'.join('%s' % aggr for aggr in batch.aggrs))
+
       if batch.next_key == None:
         break # this is the last batch
       start_key = batch.next_key
 
   except locomatix.LxException, e:
     dprint(args, lxclient.response_body(), \
-      "error: failed to retrieve space activity list for feed (%s) - %s" % (feed, str(e)))
+      "error: failed to query space activity list %s - %s" % (query, str(e)))
     sys.exit(1)
     
   except KeyboardInterrupt:
@@ -93,4 +96,4 @@ def get_space_activity():
 
 
 if __name__ == '__main__':
-  get_space_activity()
+  query_space_activity()

@@ -42,28 +42,28 @@ class LxResponseHandler(object):
           rnvpairs[name] = value
     return rnvpairs
 
-  def createCallback(self, type, params): 
-    if type == 'URL':
+  def createCallback(self, atype, params): 
+    if atype == 'URL':
       return URLCallback(params['CallbackURL'])
 
-    elif type == 'ApplePushNotification':
+    elif atype == 'ApplePushNotification':
       info = params['ApplePushNotificationInfo']
       return ApplePushCallback(info['Message'], info['Sound'], info['Token'])
     return None
 
-  def createRegion(self, type, params): 
-    if type == 'Circle':
+  def createRegion(self, atype, params): 
+    if atype == 'Circle':
       return Circle(params['Latitude'], params['Longitude'], params['Radius'])
 
-    elif type == 'Polygon':
+    elif atype == 'Polygon':
       points = params['Points']
       pt_list = [(pt['Latitude'], pt['Longitude']) for pt in points]
       return Polygon(pt_list)
 
     return None
 
-  def createObjectRegion(self, type, params): 
-    if type == 'Circle':
+  def createObjectRegion(self, atype, params): 
+    if atype == 'Circle':
       return Circle(params['Radius'])
     return None
 
@@ -78,7 +78,7 @@ class LxResponseHandler(object):
                                                  region['RegionParams'])
     zone.callback = self.createCallback(callback['CallbackType'], callback) 
     zone.trigger = rzone['Trigger']
-    zone.predicate = rzone['Predicate']
+    zone.query = rzone['Predicate']
 
     predicate = rzone['Predicate'].rstrip().split(' ')
     zone.from_feed = predicate[1]
@@ -99,7 +99,7 @@ class LxResponseHandler(object):
                                      region['RegionParams'])
     fence.callback = self.createCallback(callback['CallbackType'], callback)
     fence.trigger = rfence['Trigger']
-    fence.predicate = rfence['Predicate']
+    fence.query = rfence['Predicate']
 
     predicate = rfence['Predicate'].rstrip().split(' ')
     fence.from_feed = predicate[1]
@@ -107,6 +107,28 @@ class LxResponseHandler(object):
     fence.name_values = self.convertnvpairs(rfence.get('NameValues',[]))
     fence.state = rfence['State']
     return fence
+
+def HandleAggregates(data):
+  aggrs = LxAggregate()
+  aggrs_found = False
+
+  if 'Count' in data['Result']:
+    aggrs.count = int(data['Result']['Count'])
+    aggrs_found = True
+
+  if 'Sum' in data['Result']:
+    aggrs.sum = float(data['Result']['Sum'])
+    aggrs_found = True
+
+  if 'Maximum' in data['Result']:
+    aggrs.max = float(data['Result']['Maximum'])
+    aggrs_found = True
+
+  if 'Minimum' in data['Result']:
+    aggrs.min = float(data['Result']['Minimum'])
+    aggrs_found = True
+
+  return [aggrs] if aggrs_found else []
 
 class StatusResponseHandler(LxResponseHandler):
   """Behaves exactly as the base response handler."""
@@ -121,7 +143,12 @@ class ListFeedsResponseHandler(LxResponseHandler):
   def handle(self, data):
     super(ListFeedsResponseHandler, self).handle(data)
     self.next_key = data['Result'].get('NextKey')
-    self.feeds = data['Result']['Feeds']
+    for rfeed in data['Result']['Feeds']:
+      feed = LxFeed()
+      feed.feed = rfeed['Feed']
+      feed.object_expiry = 'forever' if rfeed['ObjectExpiry'] < 0 else rfeed['ObjectExpiry']
+      feed.location_expiry = 'forever' if rfeed['LocationExpiry'] < 0 else rfeed['LocationExpiry']
+      self.feeds.append(feed)
     
 class GetAttributesResponseHandler(LxResponseHandler):
   def __init__(self):
@@ -133,22 +160,27 @@ class GetAttributesResponseHandler(LxResponseHandler):
     obj = data['Result']['Object']
     self.object.feed = obj['Feed']
     self.object.objectid = obj['ObjectID']
-    self.object.name_values = self.convertnvpairs(obj.get('NameValues',[]))
+    self.object.name_values = self.convertnvpairs(obj.get('ObjectNameValues',[]))
 
 class ListObjectsResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
     self.objects = []
+    self.aggrs = []
     self.next_key = None
 
   def handle(self, data):
     super(ListObjectsResponseHandler, self).handle(data)
     self.next_key = data['Result'].get('NextKey')
+
+    self.aggrs = HandleAggregates(data)
+    if len(self.aggrs) > 0: return
+
     for robject in data['Result']['Objects']:
       obj = LxObject()
       obj.feed = robject['Feed']
       obj.objectid = robject['ObjectID']
-      obj.name_values = self.convertnvpairs(robject.get('NameValues', []))
+      obj.name_values = self.convertnvpairs(robject.get('ObjectNameValues', []))
       self.objects.append(obj)
 
 class GetLocationResponseHandler(LxResponseHandler):
@@ -159,29 +191,52 @@ class GetLocationResponseHandler(LxResponseHandler):
   def handle(self, data):
     super(GetLocationResponseHandler, self).handle(data)
     location = data['Result']['Location']
+
     self.location.longitude = float(location['Longitude'])
     self.location.latitude = float(location['Latitude'])
     self.location.time = int(location['Time'])
-    self.location.name_values = self.convertnvpairs(location.get('NameValues', []))
+
+    self.location.lname_values = self.convertnvpairs(location.get('LocationNameValues', []))
 
 class SearchResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
     self.objlocs = []
+    self.aggrs = []
     self.next_key = None
 
   def handle(self, data):
     super(SearchResponseHandler, self).handle(data)
     self.next_key = data['Result'].get('NextKey')
+
+    self.aggrs = HandleAggregates(data)
+    if len(self.aggrs) > 0: return
+
     for robject in data['Result']['Objects']:
       objloc = LxObjectLocation()
-      objloc.feed = robject['ObjectProfile']['Feed']
-      objloc.objectid = robject['ObjectProfile']['ObjectID']
-      rloc = robject['LocationProfile']
-      objloc.longitude = rloc['Longitude']
-      objloc.latitude = rloc['Latitude']
-      objloc.time = int(rloc['Time'])
+
+      objloc.feed = robject['Feed']
+      objloc.objectid = robject['ObjectID']
+
+      if 'ObjectNameValues' in robject:
+        nvpairs = robject.get('ObjectNameValues', [])
+        objloc.name_values = self.convertnvpairs(nvpairs)
+
+      if 'Longitude' in robject:
+        objloc.longitude = robject['Longitude']
+
+      if 'Latitude' in robject:
+        objloc.latitude = robject['Latitude']
+
+      if 'Time' in robject:
+        objloc.time = int(robject['Time'])
+
+      if 'LocationNameValues' in robject:
+        nvpairs = robject.get('LocationNameValues', [])
+        objloc.lname_values = self.convertnvpairs(nvpairs)
+
       self.objlocs.append(objloc)
+   
 
 class GetZoneResponseHandler(LxResponseHandler):
   def __init__(self):
@@ -227,54 +282,78 @@ class GetLocationHistoryResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
     self.locations = []
+    self.aggrs = []
     self.next_key = None
 
   def handle(self, data):
     super(GetLocationHistoryResponseHandler, self).handle(data)
     self.next_key = data['Result'].get('NextKey')
-    for rlocation in data['Result']['Trail']:
+
+    self.aggrs = HandleAggregates(data)
+    if len(self.aggrs) > 0: return
+
+    for rlocation in data['Result']['Objects']:
       location = LxLocation()
-      location.longitude = float(rlocation['Longitude'])
-      location.latitude = float(rlocation['Latitude'])
-      location.time = int(rlocation['Time'])
-      location.name_values = self.convertnvpairs(rlocation.get('NameValues', []))
+
+      if 'Longitude' in rlocation:
+        location.longitude = float(rlocation['Longitude'])
+
+      if 'Latitude' in rlocation:
+        location.latitude = float(rlocation['Latitude'])
+
+      if 'Time' in rlocation:
+        location.time = int(rlocation['Time'])
+
+      location.lname_values = self.convertnvpairs(rlocation.get('LocationNameValues', []))
       self.locations.append(location)
     
 class GetSpaceActivityResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
     self.objlocs = []
+    self.aggrs = []
     self.next_key = None
 
   def handle(self, data):
     super(GetSpaceActivityResponseHandler, self).handle(data)
     self.next_key = data['Result'].get('NextKey')
-    for robject in data['Result']['Activity']:
+
+    self.aggrs = HandleAggregates(data)
+    if len(self.aggrs) > 0: return
+
+    for robject in data['Result']['Objects']:
       objloc = LxObjectLocation()
       objloc.feed = robject['Feed']
       objloc.objectid = robject['ObjectID']
-      objloc.longitude = float(robject['Longitude'])
-      objloc.latitude = float(robject['Latitude'])
-      objloc.time = int(robject['Time'])
-      objloc.name_values = self.convertnvpairs(robject.get('NameValues', []))
+
+      if 'Longitude' in robject:
+        objloc.longitude = float(robject['Longitude'])
+
+      if 'Latitude' in robject:
+        objloc.latitude = float(robject['Latitude'])
+
+      if 'Time' in robject:
+        objloc.time = int(robject['Time'])
+
+      objloc.lname_values = self.convertnvpairs(robject.get('LocationNameValues', []))
       self.objlocs.append(objloc)
 
 class GetHistogramResponseHandler(LxResponseHandler):
   def __init__(self):
     LxResponseHandler.__init__(self)
-    self.grid_counts = LxGridCounts()
+    self.grid_aggregates = LxGridAggregates()
 
   def handle(self, data):
     super(GetHistogramResponseHandler, self).handle(data)
-    self.grid_counts.nhslices = data['Result']['HorizontalSlices']  
-    self.grid_counts.nvslices = data['Result']['VerticalSlices']  
+    self.grid_aggregates.nhslices = data['Result']['HorizontalSlices']  
+    self.grid_aggregates.nvslices = data['Result']['VerticalSlices']  
 
     count = 0
     grid_row = []
     for i in data['Result']['ObjectGrid']:
       grid_row.append(i) 
       count = count + 1
-      if count % self.grid_counts.nhslices == 0:
-        self.grid_counts.counts.append(grid_row)
+      if count % self.grid_aggregates.nhslices == 0:
+        self.grid_aggregates.aggregates.append(grid_row)
         count = 0
         grid_row = []

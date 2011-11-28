@@ -21,12 +21,12 @@ from callback import *
 
 
 ROUTE_SIGNATURES = {
-  'CreateFeed':         ( 'POST',    '/feed/Create.json',                       None     ),
-  'DeleteFeed':         ( 'DELETE',  '/feed/Delete.json',                       None     ),
+  'CreateFeed':         ( 'POST',   '/feed/Create.json',                        None     ),
+  'DeleteFeed':         ( 'DELETE', '/feed/Delete.json',                        None     ),
   'ListFeeds':          ( 'GET',    '/feed/List.json',                          None     ),
   'CreateObject':       ( 'POST',   '/feed/%s/object/Create.json',              ['feed'] ),
   'DeleteObject':       ( 'DELETE', '/feed/%s/object/Delete.json',              ['feed'] ),
-  'ListObjects':        ( 'GET',    '/feed/%s/ListObjects.json',                ['feed'] ),
+  'ListObjects':        ( 'GET',    '/ListObjects.json',                        None     ),
   'GetAttributes':      ( 'GET',    '/feed/%s/object/GetAttributes.json',       ['feed'] ),
   'UpdateAttributes':   ( 'PUT',    '/feed/%s/object/UpdateAttributes.json',    ['feed'] ),
   'GetLocation':        ( 'GET',    '/feed/%s/object/GetLocation.json',         ['feed'] ),
@@ -45,9 +45,9 @@ ROUTE_SIGNATURES = {
   'ListFences':         ( 'GET',    '/fence/List.json',                         None     ),
   'DeactivateFence':    ( 'POST',   '/fence/DeActivate.json',                   None     ),
   'DeleteFence':        ( 'DELETE', '/fence/Delete.json',                       None     ),
-  'GetLocationHistory': ( 'GET',    '/analytics/feed/%s/object/Trail.json',     ['feed'] ),
-  'GetSpaceActivity':   ( 'GET',    '/analytics/feed/%s/SpaceActivity.json',    ['feed'] ),
-  'GetHistogram':       ( 'GET',    '/analytics/feed/%s/ObjectGrid.json',       ['feed'] )
+  'GetLocationHistory': ( 'GET',    '/analytics/ObjectTrail.json',              None     ),
+  'GetSpaceActivity':   ( 'GET',    '/analytics/SpaceActivity.json',            None     ),
+  'GetHistogram':       ( 'GET',    '/analytics/ObjectGrid.json',               None     )
 }
 
 def tnvs(name_values):
@@ -122,9 +122,18 @@ class LocomatixRequest(object):
 
 
 class CreateFeedRequest(LocomatixRequest):
-  def __init__(self, feed, name_values={}):
+  def __init__(self, feed, object_expiry, location_expiry, name_values={}):
     self.METHOD, self.URI_FORMAT, self.URI_PARAMS = ROUTE_SIGNATURES['CreateFeed']
-    params = dict({ 'feed' : feed })
+
+    if isinstance(object_expiry, str) and object_expiry == 'forever':
+      object_expiry = -1
+
+    if isinstance(location_expiry, str) and location_expiry == 'forever':
+      location_expiry = -1
+
+    params = dict({ 'feed' : feed, 'object_expiry' : object_expiry, \
+                    'location_expiry' : location_expiry })
+
     params.update(tnvs(name_values))
     super(CreateFeedRequest, self).__init__(params)
 
@@ -142,15 +151,13 @@ class ListFeedsRequest(LocomatixRequest):
 
 
 class CreateObjectRequest(LocomatixRequest):
-  def __init__(self, objectid, feed, name_values={}, location = None, time = 0, ttl=0):
+  def __init__(self, objectid, feed, name_values={}, location = None, time = 0):
     self.METHOD,   self.URI_FORMAT,  self.URI_PARAMS = ROUTE_SIGNATURES['CreateObject']
     params = dict({ 'feed':feed, 'oid':objectid })
     params.update(tnvs(name_values))
     if location != None:
       params.update(location._params)
       params['time'] = int(time)
-      if ttl != 0:
-        params['ttl'] = ttl
     super(CreateObjectRequest, self).__init__(params)
 
 
@@ -162,9 +169,9 @@ class DeleteObjectRequest(LocomatixRequest):
 
 
 class ListObjectsRequest(LocomatixRequest):
-  def __init__(self, feed, start_key, fetch_size):
+  def __init__(self, query, start_key, fetch_size):
     self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['ListObjects']
-    params = { 'feed' : feed, 'startkey':start_key, 'fetchsize':fetch_size }
+    params = { 'predicate' : query, 'startkey':start_key, 'fetchsize':fetch_size }
     super(ListObjectsRequest, self).__init__(params)
 
 
@@ -184,13 +191,11 @@ class UpdateAttributesRequest(LocomatixRequest):
 
 
 class UpdateLocationRequest(LocomatixRequest):
-  def __init__(self, objectid, feed, location, time, name_values={}, ttl=0):
+  def __init__(self, objectid, feed, location, time, name_values={}):
     self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['UpdateLocation']
     params = dict({ 'oid' : objectid, 'feed' : feed, 'time': int(time) })
     params.update(location._params)
     params.update(tnvs(name_values))
-    if ttl != 0:
-      params['ttl'] = ttl
     super(UpdateLocationRequest, self).__init__(params)
 
 
@@ -226,6 +231,7 @@ class SearchRegionRequest(LocomatixRequest):
       'startkey':fetch_start, 'fetchsize':fetch_size, \
       'predicate':predicate \
     })
+
     if not isinstance(region, LocomatixRegion):
       raise ValueError("Invalid region type (%s) - region must derive from LocomatixRegion" % type(region))
     params.update(region._params)
@@ -350,10 +356,10 @@ class DeleteFenceRequest(LocomatixRequest):
 
 
 class GetLocationHistoryRequest(LocomatixRequest):
-  def __init__(self, objectid, feed, start_time, end_time, start_key, fetch_size):
+  def __init__(self, query, start_time, end_time, start_key, fetch_size):
     self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['GetLocationHistory']
     params = { 
-      'oid' : objectid, 'feed' : feed, \
+      'predicate' : query, \
       'starttime' : int(start_time), 'endtime' : int(end_time), \
       'startkey': start_key, 'fetchsize' : fetch_size
     }
@@ -361,10 +367,10 @@ class GetLocationHistoryRequest(LocomatixRequest):
 
 
 class GetSpaceActivityRequest(LocomatixRequest):
-  def __init__(self, feed, region, start_time, end_time, start_key, fetch_size):
+  def __init__(self, query, region, start_time, end_time, start_key, fetch_size):
     self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['GetSpaceActivity']
     params = dict({ 
-      'feed' : feed, 'starttime' : int(start_time), 'endtime' : int(end_time), \
+      'predicate' : query, 'starttime' : int(start_time), 'endtime' : int(end_time), \
       'startkey': start_key, 'fetchsize' : fetch_size
     })
     if not isinstance(region, LocomatixRegion):
@@ -374,10 +380,10 @@ class GetSpaceActivityRequest(LocomatixRequest):
 
 
 class GetHistogramRequest(LocomatixRequest):
-  def __init__(self, feed, bbox, nhslices, nvslices, etime):
+  def __init__(self, query, bbox, nhslices, nvslices, etime):
     self.METHOD,   self.URI_FORMAT,   self.URI_PARAMS = ROUTE_SIGNATURES['GetHistogram']
     params = dict({ 
-      'feed' : feed, 'grid_horizontal_slices' : str(nhslices),  \
+      'predicate' : query, 'grid_horizontal_slices' : str(nhslices),  \
       'grid_vertical_slices' : str(nvslices), 'grid_starttime' : int(etime) \
     })
     if not isinstance(bbox, Rectangle):

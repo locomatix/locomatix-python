@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 ###############################################################################
-from response_objects import PrintableAttributes
+from objects import PrintableAttributes
 
 class LocomatixCallback(PrintableAttributes):
   """An abstract callback object from which all callbacks are derived."""
@@ -28,6 +28,12 @@ class URLCallback(LocomatixCallback):
     self.url = url
     params = { 'callbacktype':'url', 'callbackurl': url }
     super(URLCallback, self).__init__(params)
+
+  def to_map(self):
+    params = dict()
+    params['lxtype'] = 'LxCallback'
+    params['type'] = self.type
+    params['url'] = self.url
 
 class ApplePushCallback(LocomatixCallback):
   def __init__(self, message, sound, token):
@@ -44,4 +50,20 @@ class ApplePushCallback(LocomatixCallback):
 
     super(ApplePushCallback, self).__init__(params)
 
+  def to_map(self):
+    params = dict()
+    params['lxtype'] = 'LxCallback'
+    params['type'] = self.type
+    params['message'] = self.message
+    params['sound'] = self.sound
+    params['token'] = self.token
 
+def createCallback(params):
+  ''' Create the appropriate instance of the callback from the map'''
+  if params['type'] == 'url':
+    return URLCallback(params['url'])
+
+  elif params['type'] == 'applepushnotification':
+    return ApplePushCallback(params['message'], params['sound'], params['token'])
+
+  return None

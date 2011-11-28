@@ -18,12 +18,19 @@
 ###############################################################################
 import sys
 import locomatix
+import locomatix.lql as lql
 from _utils import *
 
-def delete_all_fences():
-  """docstring for delete_all_objects"""
+def query_histogram():
+  """docstring for query_histogram"""
   parser = locomatix.ArgsParser()
-  parser.add_description("Deletes all the fences")
+  parser.add_description("Query and get aggregates for a given region in the given time slice")
+  parser.add_arg('query',            'LQL query to execute')
+  parser.add_arg('latlow',           'Lower latitude of the bounding box')
+  parser.add_arg('longlow',          'Lower longitude of the bounding box')
+  parser.add_arg('lathigh',          'High latitude of the bounding box')
+  parser.add_arg('longhigh',         'High longitude of the bounding box')
+  parser.add_arg('time-interval',    'Number of seconds from now')
   args = parser.parse_args(sys.argv)
   
   try:
@@ -36,18 +43,30 @@ def delete_all_fences():
     print "Unable to connect to %s at port %d" % (args['host'],args['port'])
     sys.exit(1)
   
+  query = args['query']
+  latlow = float(args['latlow'])
+  longlow = float(args['longlow'])
+  lathigh = float(args['lathigh'])
+  longhigh = float(args['longhigh'])
+  timei = float(args['time-interval'])
+
+  region = locomatix.Rectangle(latlow, longlow, lathigh, longhigh)
+  query = lql.Query(query)
+
   try:
-    for fence in lxclient.list_fences():
-      lxclient.delete_fence(fence.fenceid)
-      dprint(args, lxclient.response_body(), None)
- 
+
+    etime = time.time() - timei 
+    aggregates  = lxclient.query_histogram(query, region, 50, 50, etime)
+
+    matrix = ''
+    for i in aggregates.aggregates:
+      matrix += '%s\n' % str(i) 
+    dprint(args, lxclient.response_body(), '%s' % matrix)
+
   except locomatix.LxException, e:
-    dprint(args, lxclient.response_body(), "error: failed to delete all fences - %s" % str(e))
+    dprint(args, lxclient.response_body(), \
+      "error: failed to get histogram - %s" % (str(e)))
     sys.exit(1)
     
-  except KeyboardInterrupt:
-    sys.exit(1)
-
-
 if __name__ == '__main__':
-  delete_all_fences()
+  query_histogram()

@@ -18,6 +18,7 @@
 ###############################################################################
 import sys
 import locomatix
+import locomatix.lql as lql
 from _utils import *
 
 def get_location_history():
@@ -71,9 +72,10 @@ def get_location_history():
 
     start_key = locomatix.DEFAULT_FETCH_STARTKEY
     fetch_size = locomatix.DEFAULT_FETCH_SIZE
+    query = lql.SelectLocation(feed, objectid)._query
 
     while True:
-      batch = lxclient._request('get_location_history', objectid, feed, start_time, end_time, start_key, fetch_size)
+      batch = lxclient._request('get_location_history', query, start_time, end_time, start_key, fetch_size)
       dprint(args, lxclient.response_body(), '\n'.join('%s' % obj for obj in batch.locations))
       if batch.next_key == None:
         break # this is the last batch

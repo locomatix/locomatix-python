@@ -29,7 +29,6 @@ def update_location():
   parser.add_arg('latitude', 'Latitude of the location')
   parser.add_arg('longitude','Longitude of the location')
   parser.add_arg('time',     'Time at this location')
-  parser.add_option('ttl',    'u:', 'ttl=', 'TTL - Time validity of the location')
   parser.add_option('nvpairs','v:', 'nv=',  'Name-value pairs (specified as name=value)', True)
   args = parser.parse_args(sys.argv)
   
@@ -41,7 +40,6 @@ def update_location():
   location   = locomatix.Point(latitude, longitude) 
 
   nvpairs = form_nvpairs(args['nvpairs'])
-  ttl = 0 if args['ttl'] == '' else long(args['ttl'])
 
   try:
     lxclient = locomatix.Client(args['custid'], \
@@ -54,7 +52,7 @@ def update_location():
     sys.exit(1)
   
   try:
-    lxclient.update_location(objectid, feed, location, time, nvpairs, ttl)
+    lxclient.update_location(objectid, feed, location, time, nvpairs)
   
   except locomatix.LxException, e:
     dprint(args, lxclient.response_body(), 

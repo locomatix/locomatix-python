@@ -86,8 +86,10 @@ class ListObjectsResponse(LocomatixResponse):
     if self.response_meta.message == 'Success':
        self.next_key = self.handler.next_key
        self.objects = self.handler.objects
+       self.aggrs = self.handler.aggrs
     else:
        self.next_key = None
+       self.aggrs = []
        self.objects = []
 
 
@@ -125,9 +127,11 @@ class SearchNearbyResponse(LocomatixResponse):
     super(SearchNearbyResponse, self).__init__(http_response)
     if self.response_meta.message == 'Success':
        self.objlocs = self.handler.objlocs
+       self.aggrs = self.handler.aggrs
        self.next_key = self.handler.next_key
     else:
        self.objlocs = []
+       self.aggrs = []
        self.next_key = None
        
 
@@ -137,9 +141,11 @@ class SearchRegionResponse(LocomatixResponse):
     super(SearchRegionResponse, self).__init__(http_response)
     if self.response_meta.message == 'Success':
        self.objlocs = self.handler.objlocs
+       self.aggrs = self.handler.aggrs
        self.next_key = self.handler.next_key
     else:
        self.objlocs = []
+       self.aggrs = []
        self.next_key = None
 
 
@@ -225,9 +231,11 @@ class GetLocationHistoryResponse(LocomatixResponse):
     super(GetLocationHistoryResponse, self).__init__(http_response)
     if self.response_meta.message == 'Success':
        self.locations = self.handler.locations
+       self.aggrs = self.handler.aggrs
        self.next_key = self.handler.next_key
     else:
        self.locations = []
+       self.aggrs = None
        self.next_key = None
 
 
@@ -237,9 +245,11 @@ class GetSpaceActivityResponse(LocomatixResponse):
     super(GetSpaceActivityResponse, self).__init__(http_response)
     if self.response_meta.message == 'Success':
        self.objlocs = self.handler.objlocs
+       self.aggrs = self.handler.aggrs
        self.next_key = self.handler.next_key
     else:
-       self.objects = None
+       self.objlocs = None
+       self.aggrs = None
        self.next_key = None
 
 
@@ -248,6 +258,6 @@ class GetHistogramResponse(LocomatixResponse):
   def __init__(self, http_response):
     super(GetHistogramResponse, self).__init__(http_response)
     if self.response_meta.message == 'Success':
-       self.grid_counts = self.handler.grid_counts
+       self.grid_aggregates = self.handler.grid_aggregates
     else:
-       self.grid_counts = []
+       self.grid_aggregates = []

@@ -18,6 +18,7 @@
 ###############################################################################
 import sys
 import locomatix
+import locomatix.lql as lql
 from _utils import *
 
 def list_objects():
@@ -43,9 +44,10 @@ def list_objects():
     for feed in feeds:
       start_key = locomatix.DEFAULT_FETCH_STARTKEY
       fetch_size = locomatix.DEFAULT_FETCH_SIZE
+      query = lql.SelectObject(feed)._query
 
       while True:
-        batch = lxclient._request('list_objects', feed, start_key, fetch_size)
+        batch = lxclient._request('list_objects', query, start_key, fetch_size)
         dprint(args, lxclient.response_body(), '\n'.join('%s' % obj for obj in batch.objects))
         if batch.next_key == None:
           break # this is the last batch
