@@ -22,18 +22,19 @@ class PrintableAttributes(object):
   """Base class for all objects returned in locomatix responses."""
   def __str__(self):
     """Returns a json-like representation of the object"""
-    params = self.__dict__
-    if '_params' in params:
-      del params['_params']
-    return str(params)
-
+    return str(self.params())
+  
   def __repr__(self):
     """Returns a json-like representation of the object"""
-    params = self.__dict__
+    return str(self.params())
+
+  def params(self):
+    params = {}
+    params.update(self.__dict__)
     if '_params' in params:
       del params['_params']
-    return str(params)
-
+    return params
+  
   def to_map(self):
     """Returns a dictionary representation of the object - nested objects as well"""
     pass
